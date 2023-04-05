@@ -4,3 +4,5 @@ This repository sets up the basic structure for your final project which will di
 
 You are welcome to create/remove subdirectories as you see fit, but stay as organized as possible so others will be able to navigate and inspect your work.
  
+
+***HOT GIRLS MAKE README FILES***
