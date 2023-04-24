@@ -7,7 +7,7 @@
 # ignore datasets if too large (> 100 MB)
 # specify pathway to dataset ./data/project_dataset.csv
 /data/raw/ACSDP5Y2015.DP04-Data.csv
-# if all datasets are too large then use ./data/*.csv (only ignores CSVs)
+# if all datasets are too large then use /data/*.csv (only ignores CSVs)
 # if you have other file types then use appropriate extension ./data/*.rds
 
 # mac related files
