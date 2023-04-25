@@ -8,12 +8,15 @@ outcome <- read_csv("data/raw/gay-ta.csv") %>%
   transmute(zip_code = as.numeric(geoid10), index = totindex)
 
 # load predictor variables
-predictors <- read_csv("data/raw/ACSDP5Y2021.DP04-Data.csv", na = c("null")) %>% 
+predictors <- read_csv("data/raw/ACSDP5Y2021.DP04-Data.csv", na = c("", "-", "NA", "null")) %>% 
   janitor::clean_names() %>% 
   mutate(zip_code = str_sub(name, 7, 100)) %>% 
-  select_if(~ !any(is.na(.))) %>% 
   mutate(across(where(is.character), as.numeric)) %>% 
-  select(-name, -geo_id)
+  select_if()
+
+naniar::miss_var_summary(predictors) %>% 
+  filter(pct_miss < 100 & pct_miss > 1) %>% 
+  View()
 
 # joined data
 data <- outcome %>% 
@@ -24,3 +27,5 @@ not_matching <- outcome %>%
   pull(zip_code)
 
 map_df(not_matching, reverse_zipcode)
+
+predictors[, 10:50]
