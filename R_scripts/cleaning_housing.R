@@ -62,8 +62,14 @@ lasso_fit <- fit(lasso_wflow, data)
 
 # relevant predictors ----
 relevant_predictors_table <- tidy(lasso_fit) %>% 
-  filter(estimate != 0 & term != "(Intercept)") 
+  filter(estimate != 0 & term != "(Intercept)")
 
 relevant_predictors <- relevant_predictors_table %>% 
   pull(term) %>% 
   str_c(collapse = " + ")
+
+# update data ----
+housing_data <- select(data, zip_code, index, relevant_predictors_table$term)
+
+# save data ----
+save(housing_data, file = "data/processed/housing_data.rda")
