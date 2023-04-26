@@ -13,4 +13,4 @@ gayta <- read_csv("data/raw/gay-ta.csv")
 inner_join(gayta, nanda_parks, by = c( "GEOID10" = "zcta19")) %>%
   nrow()
 
-# all 
+
