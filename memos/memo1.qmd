@@ -1,0 +1,60 @@
+---
+title: "Final Project Progress Memo 1"
+subtitle: "STAT 301-3 Data Science 3 with R"
+author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
+date: today
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    link-external-newwindow: true
+    df-print: paged
+execute:
+  echo: false
+  warning: false
+---
+::: {.callout-tip icon="false"}
+## Github Repo Link
+
+<https://github.com/STAT301-3-2023SP/final-project-central-limit-heros>
+:::
+
+## Prediction Project Outline
+
+### Outcome Variable
+
+Regression - predicting index scores
+Include the link somewhere
+
+Include density plot or histogram here, does it need to be transformed?
+
+### Predictor Varialbes
+
+Parks data - explanation for why this data is being used + link
+
+Census data - explanation for why this data is being used + link
+
+Housing data - explanation for why this data is being used + link
+
+Missingness exploration here - plots + tables
+
+### Issues and Challenges
+Choosing the right predictors, how to capture as much of the variation as possible?
+
+Housing data is quite large, number of observations to number predictors is suspiciously close, need to narrow down the predictors before fitting models, census data also to some extent
+
+Missing data, needs to be imputed which may take some time for the machine to run
+
+## Initial Steps
+
+### Resampling
+How many folds and repeats? V-fold probably?
+
+### Recipes
+
+
+### Model Types
+
+
+### Comparison Metric
+Probably RMSE?
