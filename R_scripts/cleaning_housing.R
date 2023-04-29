@@ -18,7 +18,7 @@ outcome <- read_csv("data/raw/gay-ta.csv") %>%
 predictors <- read_csv("data/raw/ACSDP5Y2021.DP04-Data.csv", na = c("", "-", "NA", "null")) %>% 
   janitor::clean_names() %>% 
   mutate(zip_code = str_sub(name, 7, 100)) %>% 
-  mutate(across(where(is.character), as.numeric)) %>% 
+  mutate(across(where(is.character), as.numeric)) %>%
   select(-geo_id, -name)
 
 # check missingness
@@ -67,6 +67,12 @@ relevant_predictors_table <- tidy(lasso_fit) %>%
 relevant_predictors <- relevant_predictors_table %>% 
   pull(term) %>% 
   str_c(collapse = " + ")
+
+# how much of the variation is captured?
+housing_data %>% 
+  select(-zip_code) %>% 
+  lm(index ~ ., data = .) %>% 
+  summary()
 
 # update data ----
 housing_data <- select(data, zip_code, index, relevant_predictors_table$term)
