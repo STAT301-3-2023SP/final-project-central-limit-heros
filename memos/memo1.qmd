@@ -27,9 +27,14 @@ from: markdown+emoji
 :::
 
 ```{r}
+
+
 library(tidyverse)
 library(tidymodels)
 library(zipcodeR)
+
+load("data/processed/demographic_data.rda")
+census_demographic
 ```
 
 

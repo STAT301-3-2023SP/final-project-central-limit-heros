@@ -28,3 +28,5 @@
 
 # R Environment Variables
 .Renviron
+
+/.quarto/
