@@ -24,14 +24,15 @@ census_income <- census_income %>%
   mutate(zip_code = str_sub(geographic_area_name, 7, 100)) %>% 
   select(zip_code, everything(), -geographic_area_name) %>% 
   #change everything to numeric
-  mutate(across(where(is.character), as.numeric))
+  mutate(zip_code = factor(zip_code),
+         across(where(is.character), as.numeric))
 
 # data inspection ----
 #missingness
 census_income %>% 
   naniar::miss_var_summary() %>% 
   filter(pct_miss > 0)
-#some cols are completely, should be deleted
+#some cols are completely empty, should be deleted
 census_income <- census_income %>% 
   select_if(~ !all(is.na(.)))
 
