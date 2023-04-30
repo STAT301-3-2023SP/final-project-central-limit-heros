@@ -31,10 +31,12 @@ from: markdown+emoji
 
 library(tidyverse)
 library(tidymodels)
+library(patchwork)
 library(zipcodeR)
 
 load("data/processed/demographic_data.rda")
-census_demographic
+gayta <- read_csv("data/raw/gay-ta.csv") %>%
+  janitor::clean_names()
 ```
 
 
@@ -46,7 +48,7 @@ Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipe
 
 ### Outcome Variable
 
-In order to rank Gayborhood status, we are using a published dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1] that was analyzed to display distribution of queer communities in Jan Diehm's 2018 article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). Specifically, the metrics in this dataset are combined to form a gayborhood index, which we will use as the supervising variable for our machine learning project. This index is a wholistic measure of queerness, derived primarily from the following measures:
+In order to rank Gayborhood status, we are using a published dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1] that was analyzed to display distribution of queer communities in Jan Diehm's 2018 article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). Specifically, the metrics in this dataset are combined to form a Gayborhood index, which we will use as the supervising variable for our machine learning project. This index is a holistic assessment of queerness, derived primarily from the following measures:
 
 [^1]: Jan Diehm. (2018). *Gayborhoods* [Data set]. *The Pudding*, data.world. https://data.world/the-pudding/gayborhoods. Accessed 10 April 2023.
 
@@ -54,6 +56,31 @@ In order to rank Gayborhood status, we are using a published dataset [from data 
 - Unmarried partner same sex households
 - Number of Gay Bars
 - Whether or not a pride parade routes through the region
+
+In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. Because of this heavy right skew, we are choosing to model the log 10 transformation of the data, which is significantly more normal, and will thus fit better with our chosen models:
+
+```{r}
+#| label: log10-transform-index
+
+p1 <- ggplot(gayta, aes(x = totindex)) +
+  geom_density(fill = "rosybrown1") +
+  labs(title = "Untransformed Distribution",
+       x = "Gayborhood Index (Untransformed)",
+       y = "Density") +
+  theme_minimal()
+
+p2 <- ggplot(gayta, aes(x = log10(totindex))) +
+  geom_density(fill = "rosybrown1") +
+  labs(title = "Transformed Distribution",
+       x = "Gayborhood Index (log10 Transform)",
+       y = "Density") +
+  theme_minimal()
+
+p1 + p2 + plot_annotation(title = "Log Transformation Improves Target Variable Normality")
+
+
+```
+
 
 Regression - predicting index scores
 Include the link somewhere
