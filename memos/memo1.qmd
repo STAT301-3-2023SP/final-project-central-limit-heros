@@ -1,6 +1,6 @@
 ---
-title: "Final Project Progress Memo 1"
-subtitle: "STAT 301-3 Data Science 3 with R"
+title: "Queer Coded: Supervised ML to Predict LGBTQ+ Acceptance in American Neighborhoods"
+subtitle: "Final Project Progress Memo 1-- STAT 301-3 Data Science 3 with R"
 author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
 date: today
 format: 
@@ -8,6 +8,7 @@ format:
     embed-resources: true
     toc: true
     link-external-newwindow: true
+    #title-block-banner: true # can add this later with an image maybe.,., default color is ugly tho
     df-print: paged
 execute:
   echo: false
@@ -21,7 +22,18 @@ execute:
 
 ## Prediction Project Outline
 
+### Introduction
+
+Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipedia.org/wiki/Gay_village), have been urban areas in which LGBTQ+ people have found community and built culture worldwide. However, these geographic areas serve as much more than the sexuality of their constituents, and have been cited as yielding robust creative economies, as well as a welcoming environment for those of many identities. Knowing this, the identity of a certain locale as a gayborhood becomes a crucial sociological metric, with neighborhoods with a more prevalent queer identity driving social liberalism in the face of prejudice. Our analysis thus focuses on building a location-based model that can uses a variety of parameters including housing, land use, and non-queer demographic data to predict Gayborhood status, and, in so doing, determine whether an area is suitable for queer folks with the goal of advancing understanding of liberal areas.
+
 ### Outcome Variable
+
+In order to rank Gayborhood status, we are using a published dataset [from data world](https://data.world/the-pudding/gayborhoods) that was analyzed to display distribution of queer communities in Jan Diehm's 2018 article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). Specifically, the metrics in this dataset are combined to form a gayborhood index, which we will use as the supervising variable for our machine learning project [***WAIT DID WE EVER DECIDE IF WE WERE DOING REGRESSION OR CLASSIFICATION OR BOTH LOL. OH WAIT IT SAYS RegreSSION Right BELOW THSI OOPS> WELL IM TIRED BEDTIME***]. This index is a wholistic measure of queerness, derived primarily from the following measures:
+
+- Same-sex joint tax filers
+- Unmarried partner same sex households
+- Number of Gay Bars
+- Whether or not a pride parade routes through the region
 
 Regression - predicting index scores
 Include the link somewhere
