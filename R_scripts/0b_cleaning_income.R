@@ -18,7 +18,7 @@ census_income <- census_income[-1,] %>%
   janitor::clean_names()
 
 #selecting necessary columns ----
-census_income2 <- census_income %>% 
+census_income <- census_income %>% 
   select(geographic_area_name, contains("estimate_") & !contains("annotation")) %>%
   #add variable with zip code
   mutate(zip_code = str_sub(geographic_area_name, 7, 100)) %>% 
@@ -28,24 +28,27 @@ census_income2 <- census_income %>%
 
 # data inspection ----
 #missingness
-census_income2 %>% 
+census_income %>% 
   naniar::miss_var_summary() %>% 
   filter(pct_miss > 0)
 #some cols are completely, should be deleted
-census_income2 <- census_income2 %>% 
+census_income <- census_income %>% 
   select_if(~ !all(is.na(.)))
 
-census_income2 %>% 
+census_income %>% 
   naniar::miss_var_summary()
 
 # are we going to be doing log transformations? should we look for skew?
 # I will check a few random variables for skew
-census_income2 %>% 
+census_income %>% 
   ggplot(aes(x = households_estimate_total)) +
   geom_histogram()
 #households - strongly skewed
 
-census_income2 %>% 
+census_income %>% 
   ggplot(aes(x = families_estimate_15_000_to_24_999)) +
   geom_histogram()
 #income brackets also strongly skewed
+
+#save cleaned dataset ----
+save(census_income, file = "data/processed/income_data.rda")
