@@ -92,7 +92,7 @@ Include density plot or histogram here, does it need to be transformed?
 Because this project is based primarily on data by ZCTA, a US Census-defined zipcode proxy, we are able to pool data from three main sources, to encompass 3 major facets of urban life.
 
 
-1. Our [first predictor set](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04)[^2] comes from the US Census, and provides a variety of information about housing characteristics including number of housing units in an area, rent prices, and indicators of development (phone reception, income to rent ratio, etc.). This is derived from the Census's ACS 5-year survey estimates, as published in 2021.
+1. Our [first predictor set](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04)[^2] comes from the US Census, and provides a variety of information about housing characteristics including number of housing units in an area, rent prices, and indicators of development (phone reception, income to rent ratio, etc.). This is derived from the Census's ACS 5-year survey estimates for the year 2015. We use data from 2015 since that is also when the Gayborhood dataset was published.
 
 [^2]: US Census. (2021). *DP04: SELECTED HOUSING CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04. Accessed 24 April 2023.
 
@@ -112,6 +112,8 @@ Because this project is based primarily on data by ZCTA, a US Census-defined zip
 
 
 ### Issues and Challenges
+Collecting and cleaning the data was fairly easy. The census data is well organized, and generally has low missingness, which allowed us to only throw out a few potential predictors and will allow us to impute the rest. For cleaning of census data, we also removed columns that contained margins of error and annotations rather than the actual variables. The parks data required the removal of some text form within the data columns and conversion to numeric format. After cleaning individually, all datasets were then combined into a single dataset.
+
 Choosing the right predictors, how to capture as much of the variation as possible?
 
 Housing data is quite large, number of observations to number predictors is suspiciously close, need to narrow down the predictors before fitting models, census data also to some extent
