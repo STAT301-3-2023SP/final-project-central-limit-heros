@@ -31,12 +31,11 @@ census_commuter <- census_commuter %>%
 # select and get rid of high missingness
 high_missing <- census_commuter %>% 
   naniar::miss_var_summary() %>% 
-  filter(pct_miss > 5) %>%
+  filter(pct_miss > 20) %>%
   select(variable)
 
 census_commuter <- census_commuter %>%
-  select(!contains(high_missing[[1]])) %>%
-  naniar::miss_var_summary() %>%
+  select(!contains(high_missing[[1]])) 
 
 # I will check a random variables for skew
 census_commuter %>% 
@@ -45,4 +44,4 @@ census_commuter %>%
 #some skew 
 
 #save cleaned dataset ----
-save(census_demographic, file = "data/processed/demographic_data.rda")
+save(census_commuter, file = "data/processed/commuter_data.rda")
