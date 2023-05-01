@@ -18,7 +18,7 @@ train <- training(split)
 test <- testing(split)
 
 # fold data ----
-folds <- vfold_cv(train, v = 10, repeats = 5, strata = gayborhood_index)
+folds <- vfold_cv(train, v = 8, repeats = 5, strata = gayborhood_index)
 
 # save ----
-save(split, folds, file = "data/processed/split_data.rda")
+save(folds, split, train, file = "data/processed/split_data.rda")
