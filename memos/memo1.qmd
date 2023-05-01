@@ -37,6 +37,18 @@ library(zipcodeR)
 load("data/processed/demographic_data.rda")
 gayta <- read_csv("data/raw/gay-ta.csv") %>%
   janitor::clean_names()
+
+load("data/processed/combined_datasets.rda")
+
+all_data <- combined_datasets %>%
+  dplyr::mutate(log_gayborhood_index = log10(gayborhood_index)) %>%
+  select(!c(gayborhood_index, 
+            car_truck_or_van_carpooled_estimate_median_age_years,
+            married_couple_families_estimate_mean_income_dollars,
+            married_couple_families_estimate_median_income_dollars,
+            estimate_selected_monthly_owner_costs_smoc_housing_units_with_a_mortgage_median_dollars,
+            estimate_selected_monthly_owner_costs_smoc_housing_units_without_a_mortgage_median_dollars	)) %>%
+  select(zip_code, log_gayborhood_index, everything())
 ```
 
 
@@ -81,25 +93,14 @@ p1 + p2 + plot_annotation(title = "Log Transformation Improves Target Variable N
 
 ```
 
-
-Regression - predicting index scores
-Include the link somewhere
-
-Include density plot or histogram here, does it need to be transformed?
-
 ### Predictor Variables
 
-Because this project is based primarily on data by ZCTA, a US Census-defined zipcode proxy, we are able to pool data from three main sources, to encompass 3 major facets of urban life.
+Because this project is based primarily on data by ZCTA, a US Census-defined zipcode proxy, we are able to pool data from two main sources -- the US Census and Open ICPSR-- to encompass 4 major facets of urban life.
 
 
 1. Our [first predictor set](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04)[^2] comes from the US Census, and provides a variety of information about housing characteristics including number of housing units in an area, rent prices, and indicators of development (phone reception, income to rent ratio, etc.). This is derived from the Census's ACS 5-year survey estimates for the year 2015. We use data from 2015 since that is also when the Gayborhood dataset was published.
 
 [^2]: US Census. (2021). *DP04: SELECTED HOUSING CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04. Accessed 24 April 2023.
-
-```{r}
-
-```
-
 
 2. We also used US Census data to glean information about various demographic characteristics, as represented in [our second data section](https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05)[^3]. This set primarily synthesizes demographic information that is *not* specifically related to sexuality (i.e. the parameters that went into the calculation of our outcome variable), but describe other characteristics of each area.
 
@@ -110,26 +111,78 @@ Because this project is based primarily on data by ZCTA, a US Census-defined zip
 
 [^4]: Li, Mao, Melendez, Robert, Khan, Anam, Gomez-Lopez, Iris, Clarke, Philippa, and Chenoweth, Megan. (2020). *National Neighborhood Data Archive (NaNDA): Parks by ZIP Code Tabulation Area, United States, 2018*. Ann Arbor, MI: Inter-university Consortium for Political and Social Research. https://doi.org/10.3886/E119803V1. Accessed 23 April 2023
 
+4. Finally, we included data concerning the primary method of [transport to work](https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802)[^5], also from the US Census ACS survey. This will round out our predictors by describing the movement, as well as the physical locale, within a neighborhood.
+
+[^5]: US Census. (2015). *S0802: MEANS OF TRANSPORTATION TO WORK BY SELECTED CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802. Accessed 30 April 2023.
+
+These yields a functional dataset with > 550 predictors, which fall into the above categories, and can be explored here:
+
+```{r}
+#| label: lay-your-predictors-on-me
+
+all_data %>%
+  colnames() %>%
+  as_tibble() %>%
+  rename("variable" = "value") %>%
+  filter(variable != "zip_code", variable != "log_gayborhood_index") %>%
+  DT::datatable()
+```
+
 
 ### Issues and Challenges
 Collecting and cleaning the data was fairly easy. The census data is well organized, and generally has low missingness, which allowed us to only throw out a few potential predictors and will allow us to impute the rest. For cleaning of census data, we also removed columns that contained margins of error and annotations rather than the actual variables. The parks data required the removal of some text form within the data columns and conversion to numeric format. After cleaning individually, all datasets were then combined into a single dataset.
 
-Choosing the right predictors, how to capture as much of the variation as possible?
+One main concern with our data is the ratio of observations to predictors, since the ratio is currently ~ 1:4. Because of this, most of our feature engineering will rely on targeted dimensionality reduction in order to explain the variance captured in these variables without overfitting to prediction variables.
 
-Housing data is quite large, number of observations to number predictors is suspiciously close, need to narrow down the predictors before fitting models, census data also to some extent
+Because census predictors were numerous, any variables with greater than 10% missing were removed. The remaining missing values are summarized in the table below, with higher missingness listed first. The missingness in these variables are assumed to be randomly missing since they were collected and reported in the US Census ACS survey:
 
-Missing data, needs to be imputed which may take some time for the machine to run
+```{r}
+#| label: vis-miss
+
+all_data %>%
+  naniar::miss_var_summary() %>%
+  arrange(desc(pct_miss)) %>%
+  DT::datatable()
+```
 
 ## Initial Steps
 
 ### Resampling
-How many folds and repeats? V-fold probably?
 
-### Recipes
+To ensure robust resampling analysis, data was first ***split 80/20*** :: training/test to ensure enough observations were included in training data to avoid overfitting. Because our data is very wide in comparison with its length, we have chosen to perform ***v-fold cross validation*** with ***8 folds*** and ***5 repeats***, in order to estimate chosen hyperparameters for our regression models. 
+
+### Feature Engineering Workflows
+
+- For this analysis, we propose two main feature engineering pipelines to be applied across all model types. 
+
+1. *Lasso Parameter Selection*: Before training our models, we will use lasso regression to select only variables that are contributing in large part to our lasso fit. Two-way interaction terms will then be added for important parameters. 
+
+2. *Dimensionality Reduction*: Because we have a large number of predictors, we will also train a model using Principal Component Analysis to select the top principal components that are derived from these input parameters. This will also help to describe variance in the dataset without overfitting to many parameters. 
+
+
+***NOTE:*** All models will have randomly missing variables imputed using linear imputation. Near zero variance predictors will also be removed before further analysis.
 
 
 ### Model Types
 
+Because our goal is primarily predictive, we plan to train a variety of model types, focusing on those that are known to be successful with deep patterns in data, such as neural networks, which will be easier to train on our numerous predictors. We list the following as main model classes to investigate, and will move forward with classes that perform well across the first resamples:
+
+- Penalized Elastic Net Regression
+
+- Random Forest + Boosted Tree
+
+- K-Nearest Neighbors
+
+- Neural Networks 
+  - Basic neural networks using `nnet` in R
+  - Using `keras` and [Tensorflow](https://www.tensorflow.org/) from python through R
+  
+- Multivariate Adaptive Regression Splines
+
+- Cubist ensemble regression
+
+Note that, because we have a large dataset with a regression analysis, we are generally avoiding the use of support vector machines.
+
 
 ### Comparison Metric
-Probably RMSE?
+In order to select the best fitting models, we will choose primarily based on root mean squared error (RMSE). This is a sensible primary metric for our results as we have a specific numeric output that we are trying to predict, and thus will select models that are accurate. For resampled models that perform the same based on rmse, we will use Rsquared to choose models that are successfully modeling variance in the target variable.
