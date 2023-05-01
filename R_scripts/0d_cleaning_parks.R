@@ -27,8 +27,9 @@ nanda_parks <- nanda_parks %>%
          #convert any open parks to factor
          any_open_park = as.factor(any_open_park)) %>% 
   #convert all characters to numeric
-  mutate(across(where(is.character), as.numeric))
-
+  mutate(across(where(is.character), as.numeric)) %>% 
+  #remove columns in square meters (we only need the square miles ones)
+  select(everything(), -zcta_area, tot_park_area)
 
 ## missingness slay? ----
 
