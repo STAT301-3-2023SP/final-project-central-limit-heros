@@ -17,8 +17,12 @@ load("data/processed/lasso_var_selection.rda")
 combined_datasets_wlog <- combined_datasets %>%
   # i read this as without loss of generality! too much math/econ for me oops
   select(zip_code, gayborhood_index, relevant_predictors$term[-1]) %>% 
-  mutate(log_gbdex = log10(gayborhood_index)) %>%
-  select(!gayborhood_index)
+  mutate(log_gbdex = log10(gayborhood_index),
+         log_gbdex = case_when(
+           log_gbdex == -Inf ~ -2,
+           TRUE ~ log_gbdex
+         )) %>%
+  select(!gayborhood_index) 
 
 # split data ----
 split <- initial_split(combined_datasets_wlog, prop = 0.8, strata = log_gbdex)

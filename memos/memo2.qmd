@@ -28,6 +28,8 @@ list of things we've done to keep track:
 
 - fit null model (i might have done it wrong tho it gave me an RMSE of NA)
 
+- lasso parameter selection (yay dylan thank you dylan)
+
 - figured out feature engineering (idk i haven't done this but I am anticipating we will have)
 
 

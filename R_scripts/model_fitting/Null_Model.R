@@ -24,7 +24,7 @@ set.seed(702)
 
 null_recipe <- recipe(log_gbdex ~ ., data = train) %>%
   update_role(zip_code, new_role = "id") %>%
-  step_impute_median(all_numeric_predictors()) %>% # Median imputation -> probably not best
+  step_impute_median(all_predictors()) %>% # Median imputation -> probably not best
   step_dummy(all_nominal_predictors()) %>%
   step_normalize(all_numeric_predictors())
 
