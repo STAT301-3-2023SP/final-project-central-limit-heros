@@ -10,6 +10,14 @@ tidymodels_prefer()
 #load required datasets ----
 load("data/processed/split_data.rda")
 
+#recipe - log with 0s ---- 
+rf_recipe <- recipe(log_gbdex ~ ., data = train) %>% 
+  update_role(zip_code, new_role = "id") %>% 
+  step_dummy(all_nominal_predictors()) %>% 
+  step_impute_knn(all_predictors()) %>% 
+  step_normalize(all_predictors()) %>% 
+  step_zv(all_predictors())
+
 # Define model ----
 rf_model <- rand_forest(
   mode = "regression",
@@ -22,8 +30,9 @@ rf_params <- hardhat::extract_parameter_set_dials(rf_model)
 rf_params
 
 #mtry needs to be specified
+#there are 137 unique variables in the dataset, we can use max mtry = 120
 rf_params <- rf_params %>% 
-#  update(mtry = mtry(range = c(1,13)),
+  update(mtry = mtry(range = c(1,120)),
          min_n = min_n())
 
 # define tuning grid ----
@@ -32,7 +41,7 @@ rf_grid <- grid_regular(rf_params, levels = 5)
 # workflow ----
 rf_wflow <- workflow() %>% 
   add_model(rf_model) %>% 
-#  add_recipe(fire_recipe) NEED EDIT
+  add_recipe(rf_recipe) 
 
 # Tuning/fitting ----
 
@@ -45,10 +54,8 @@ registerDoParallel(cl)
 # Place tuning code in here
 rf_tune <- rf_wflow %>% 
   tune_grid(
-    resamples = fire_folds,
-    grid = rf_grid,
-    control = keep_pred,
-    metrics  = fire_metrics
+    resamples = folds,
+    grid = rf_grid
   )
 
 #end parallel processing
@@ -67,7 +74,7 @@ rf_tictoc <- tibble(
 )
 
 # Write out results & workflow
-save(rf_wflow, rf_tune, rf_tictoc, file = "results/rf.rda")
+save(rf_wflow, rf_tune, rf_tictoc, file = "results/rf_log.rda")
 
 #load("results/elastic_net.rda")
 #collect_metrics(rf_tune)
