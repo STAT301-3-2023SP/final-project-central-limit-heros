@@ -11,7 +11,7 @@ tidymodels_prefer()
 load("data/processed/split_data.rda")
 
 #recipe - log with 0s ---- 
-rf_recipe <- recipe(log_gbdex ~ ., data = train) %>% 
+rf_recipe <- recipe(gayborhood_index ~ ., data = train) %>% 
   update_role(zip_code, new_role = "id") %>% 
   step_dummy(all_nominal_predictors()) %>% 
   step_impute_knn(all_predictors()) %>% 

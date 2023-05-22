@@ -22,10 +22,10 @@ set.seed(702)
 ########################################################################################################
 
 
-null_recipe <- recipe(log_gbdex ~ ., data = train) %>%
+null_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
   update_role(zip_code, new_role = "id") %>%
-  step_impute_median(all_predictors()) %>% # Median imputation -> probably not best
   step_dummy(all_nominal_predictors()) %>%
+  step_impute_median(all_predictors()) %>% # Median imputation -> probably not best
   step_normalize(all_numeric_predictors())
 
 ########################################################################################################
@@ -65,3 +65,4 @@ baseline
 # Save Results ----
 ########################################################################################################
 save(null_fit, baseline, file = "results/null_model.rda")
+

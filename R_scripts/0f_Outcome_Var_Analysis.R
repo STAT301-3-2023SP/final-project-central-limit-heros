@@ -49,6 +49,7 @@ recipe(totindex ~., data = gayta) %>%
 
 
 #  YEO JOHNSON ALSO DOES A BAD JOB-- THIS IS BECAUSE WE HAVE A LOT OF 0 VALUES
+# ok get rid of them LMFAO
 
 
 recipe(totindex ~., data = gayta) %>%

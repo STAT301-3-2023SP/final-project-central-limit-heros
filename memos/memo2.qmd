@@ -27,37 +27,84 @@ editor_options:
 
 ## Feature Engineering Progress
 
-### Variable Transformations and Selection
+### Outcome Variable Re-Transformation
 
-As noted in the previous memo, we have applied a logarithmic transformation with base 10 to the outcome variable due to the transformed variable having more desirable properties (appears to have a normal distribution).
+As noted in the previous memo, we originally planned to apply a log10 tranformation to our outcome variable, an index measuring how queer a ZCTA region was based on parameters defined in this dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1]. However, the appearance of success from the log transformation was based off removal of 0 values, which got transformed to negative infinity. Examining the original data more closely, we find the following things:
+
+- Calculations for `totindex` (the index measure) are not always easily decipherable, and for a few ZCTAs seem to be wrong entirely
+- Some values are 0 when some of the queerness measures (e.g. number of same sex couples joint filing taxes) are positive
+- Some zipcodes that are included in the data actually don't have people living in them (like [20535](https://www.google.com/maps/place/Washington,+DC+20535/@38.8971027,-77.0171132,17.74z/data=!4m6!3m5!1s0x89b7b79a7c49ec35:0xd126c581ac37d987!8m2!3d38.8951008!4d-77.0251409!16s%2Fm%2F07nrg5b) and [94128](https://www.google.com/maps/place/San+Francisco,+CA+94128/@37.6264524,-122.3795119,14z/data=!3m1!4b1!4m6!3m5!1s0x808f778dc64c23fb:0x4e9b9d32ba01bb94!8m2!3d37.6239079!4d-122.3815924!16s%2Fm%2F01zncnw))
+
+[^1]: Jan Diehm. (2018). *Gayborhoods* [Data set]. *The Pudding*, data.world. https://data.world/the-pudding/gayborhoods. Accessed 10 April 2023.
+
+
+To avoid this issue, we first dropped any zipcodes with $<100$ habitants, and then recalculated our outcome variable, based on the following formula:
+
+$$gayborhood\_index = 40*ss\_tax\_index + 40*ss\_live\_index + 10*parade + 10*bars$$
+where 
+
+- $ss\_tax\_index$ is a measure of what percent of couples filing jointly are same sex couples (normalized by the maximum value, on a 0 to 1 scale)
+- $ss\_live\_index$ is a measure of what percent of unmarried couples living together are same sex couples (normalized by the maximum value, on a 0 to 1 scale)
+- $parade$ is a boolean indicating if a pride parade passes through that zipcode (0 or 1)
+- $bars$ is a measure of how many gay bars there are in that area (normalized by the maximum value, 20, on a 0 to 1 scale)
+
+This calculation accurately repurposes the original dataset for our use, which is not as concerned with splitting up men and women as was the original article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). 
+
+We then used a Yeo-Johnson transformation with $\lambda = -0.268$ to transform our data and improve normality. This transformation was chosen as it allows us to keep our 0 values, which have an important physical representation in this dataset, without greatly compromising normality:
+
+```{r}
+#| label: yeo-johnson-transform
+#| echo: false
+
+library(tidyverse)
+library(tidymodels)
+load("data/processed/outcome_var.rda")
+
+ggplot(outcome, aes(x = gayborhood_index)) +
+  geom_density(fill = "rosybrown1") +
+  labs(title = "Transformed Distribution",
+       x = "Recalculated Gayborhood Index (Yeo Johnson Transform)",
+       y = "Density") +
+  theme_minimal()
+```
+
+### Variable Transformations and Selection
 
 Additionally, we employed a LASSO model with `penalty = 0.05`, which is a "strict" penalty as it removed over 75% of our initially selected variables. Here is a list of selected variables which will appear in recipes to predict the value of our outcome variable:
 
 ```{r}
 #| echo: false
-library(tidyverse)
-library(tidymodels)
 
 load("data/processed/split_data.rda")
 
 skimr::skim_without_charts(train[, 2:11])
 ```
 
-A complete skim of the selected predictors is listed in the appendix. There are also a few variables which have missing values, which need to be imputed. We will either use both KNN or Bagged Tree methods, and evaluate to see which method of imputation is more appropriate for this particular dataset.
+A complete skim of the selected predictors is listed in the appendix. There are also a few variables which have missing values, which need to be imputed. We will use both KNN or Bagged Tree methods, and evaluate to see which method of imputation is more appropriate for this particular dataset. We expect that the flexibility of Bagged trees to be lend itself better to prediction, but note that KNN might be helpful for reducing runtimes.
 
-## Other Steps
+## Basic Recipe Steps
 
-Dimensionality reduction using PCA, z-score normalization processes, NZV step, do we want to transform some of the outcome variables? we could do it through boxcox/Yeo-Johnson idk. also could throw in some interaction terms if we want to be fancy lol (probably shouldn't but maybe it will make them impressed!!) Not sure what other feature engineering things we could do though honestly
+Our basic recipes will follow this formula:
+
+1) Update the role of zipcode to be an identification variable, rather than a predictor
+
+2) Dummy encode nominal predictors
+
+3) Impute missing values with ***EITHER*** KNN ***OR*** Bagged Trees
+
+4) Scale and center predictors around 0
+
+5) remove predictors with near-zero variance (> 95% the same)
+
+In the initial steps of model fitting, we plan to continue experimenting with dimensionality reduction after our initial LASSO model, especially with the addition of interaction terms followed by PCA in our penalized elastic net models.
 
 ## Assessment Measures
 
-RMSE, but we will use R-Squared or some other thing like CCC to report.
+For assessment, we continue our plan to use ***RMSE as a base metric***, but will also include the Concordance Correlation Coefficient ([CCC](https://www.alexejgossmann.com/ccc/)) to report the ability of our model to capture variance in our target variable.
 
 ## Current Results
 
-### Null Model
-
-This table is definitely overkill I just copied the code from below lmao
+Currently, we have fit both a null model and a random forest model on our data. The results from both are below:
 
 ```{r}
 library(gt)
@@ -66,16 +113,16 @@ load("results/null_model.rda")
 
 baseline %>% 
   select(mean, std_err) %>% 
+  rename("mean_RMSE" = "mean") %>%
   gt() %>% 
   cols_label(
     std_err = "Standard Error"
   ) %>% 
-  fmt_number(c(mean, std_err), n_sigfig = 3) %>% 
+  fmt_number(c(mean_RMSE, std_err), n_sigfig = 3) %>% 
   tab_header("Null Model") %>% 
+  tab_caption(caption = "Yeo Johnson Transform") %>%
   gtExtras::gt_theme_nytimes()
 ```
-
-### Random Forest Model
 
 ```{r}
 load("results/rf_log.rda")
@@ -84,22 +131,45 @@ collect_metrics(rf_tune) %>%
   filter(.metric == "rmse") %>% 
   select(mtry, min_n, mean, std_err) %>% 
   head() %>% 
+  rename("mean_RMSE" = "mean") %>%
   gt() %>% 
   cols_label(
     std_err = "Standard Error"
   ) %>% 
-  fmt_number(c(mean, std_err), n_sigfig = 3) %>% 
-  tab_header("Random Forest Tuning Results", subtitle = "Grid Search Method") %>% 
+  fmt_number(c(mean_RMSE, std_err), n_sigfig = 3) %>% 
+  tab_header("Random Forest Tuning Results", subtitle = "Grid Search Method") %>%
+  tab_caption(caption = "Log Transform") %>%
   gtExtras::gt_theme_nytimes()
 ```
 
+
+Note that in both cases, the mean RMSE is similar, and reported on a transformed scale. Our current goal is to lower the Yeo-Johnson transformation value to 0.3, and we additionally plan on reporting RMSE for final model fits on the reverse transformed scale (although we will use the transformation for consistency through initial model selection). 
+
 ## Moving Forward
 
-How long did these take? null one took like 30 seconds maybe??
+Our current model runtimes are as follows:
 
-issues should go here
+- Null Model: ***~10 seconds***
 
-We're also going to fit KNN, Elastic Net, Boosted Tree, MARS, SVM, whatever else we can honestly, we might also try using iterative search with bayesian optimization!! how exciting.
+- Random Forest Model: ***2.95 hours***
+
+Moving forward, we plan on reporting per fold/per model runtimes, but at this stage it is important to realize that we are within our computational limits with the ability to run a KNN-imputed random forest model in less than 3 hours. We are also planning on fititng the following model types:
+
+- Penalized Elastic Net Regression
+
+- K-Nearest Neighbors
+
+- Neural Networks 
+  - Basic neural networks using `nnet` in R
+  - Using `keras` and [Tensorflow](https://www.tensorflow.org/) from python through R
+  
+- Multivariate Adaptive Regression Splines
+
+- Cubist ensemble regression
+
+Additionally, once we select our primary model types for further analysis, we plan on using bayesian iteration to tune hyperparameters, such that we can ensure we get the best fit possible.
+
+As mentioned in memo 1, because we have a large dataset with a regression analysis, we are generally avoiding the use of support vector machines.
 
 ## Appendix
 
