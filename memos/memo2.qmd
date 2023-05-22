@@ -3,7 +3,6 @@ title: "Queer Coded: Supervised ML to Predict LGBTQ+ Acceptance in American Neig
 subtitle: "Final Project Progress Memo 2-- STAT 301-3 Data Science 3 with R"
 author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
 date: today
-
 format: 
   html:
     embed-resources: true
@@ -11,29 +10,101 @@ format:
     link-external-newwindow: true
     df-print: paged
     footnotes-hover: true
-
 title-block-banner: images/pride-geotag.png
 title-block-banner-color: black
-
 execute:
   echo: false
   warning: false
 from: markdown+emoji
+editor_options: 
+  chunk_output_type: console
 ---
+::: {.callout-tip icon="false"}
+## Github Repo Link
 
+<https://github.com/STAT301-3-2023SP/final-project-central-limit-heros>
+:::
 
-hai what are we supposed to put in this <3
+## Feature Engineering Progress
 
-list of things we've done to keep track:
+### Variable Transformations and Selection
 
-- fit null model (i might have done it wrong tho it gave me an RMSE of NA)
+As noted in the previous memo, we have applied a logarithmic transformation with base 10 to the outcome variable due to the transformed variable having more desirable properties (appears to have a normal distribution).
 
-- lasso parameter selection (yay dylan thank you dylan)
+Additionally, we employed a LASSO model with `penalty = 0.05`, which is a "strict" penalty as it removed over 75% of our initially selected variables. Here is a list of selected variables which will appear in recipes to predict the value of our outcome variable:
 
-- figured out feature engineering (idk i haven't done this but I am anticipating we will have)
+```{r}
+#| echo: false
+library(tidyverse)
+library(tidymodels)
 
+load("data/processed/split_data.rda")
 
+skimr::skim_without_charts(train[, 2:11])
+```
 
+A complete skim of the selected predictors is listed in the appendix. There are also a few variables which have missing values, which need to be imputed. We will either use both KNN or Bagged Tree methods, and evaluate to see which method of imputation is more appropriate for this particular dataset.
 
+## Other Steps
 
+Dimensionality reduction using PCA, z-score normalization processes, NZV step, do we want to transform some of the outcome variables? we could do it through boxcox/Yeo-Johnson idk. also could throw in some interaction terms if we want to be fancy lol (probably shouldn't but maybe it will make them impressed!!) Not sure what other feature engineering things we could do though honestly
 
+## Assessment Measures
+
+RMSE, but we will use R-Squared or some other thing like CCC to report.
+
+## Current Results
+
+### Null Model
+
+This table is definitely overkill I just copied the code from below lmao
+
+```{r}
+library(gt)
+
+load("results/null_model.rda")
+
+baseline %>% 
+  select(mean, std_err) %>% 
+  gt() %>% 
+  cols_label(
+    std_err = "Standard Error"
+  ) %>% 
+  fmt_number(c(mean, std_err), n_sigfig = 3) %>% 
+  tab_header("Null Model") %>% 
+  gtExtras::gt_theme_nytimes()
+```
+
+### Random Forest Model
+
+```{r}
+load("results/rf_log.rda")
+
+collect_metrics(rf_tune) %>% 
+  filter(.metric == "rmse") %>% 
+  select(mtry, min_n, mean, std_err) %>% 
+  head() %>% 
+  gt() %>% 
+  cols_label(
+    std_err = "Standard Error"
+  ) %>% 
+  fmt_number(c(mean, std_err), n_sigfig = 3) %>% 
+  tab_header("Random Forest Tuning Results", subtitle = "Grid Search Method") %>% 
+  gtExtras::gt_theme_nytimes()
+```
+
+## Moving Forward
+
+How long did these take? null one took like 30 seconds maybe??
+
+issues should go here
+
+We're also going to fit KNN, Elastic Net, Boosted Tree, MARS, SVM, whatever else we can honestly, we might also try using iterative search with bayesian optimization!! how exciting.
+
+## Appendix
+
+### Full Skim of Selected Variables
+
+```{r}
+skimr::skim_without_charts(train)
+```
