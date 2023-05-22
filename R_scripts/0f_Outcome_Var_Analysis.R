@@ -74,4 +74,118 @@ gayta %>%
        y = "Density") +
   theme_minimal()
   
+#############################################################################
+# Homosexual Tomfoolery ----
+#############################################################################
+
+# ok SO. the issue is that our outcome variable, gayborhood index, has a lot of zero values.
+
+# we could fix this by just adding one? since its an index
+
+# but that could scale things weird? and would still give us a bimodal distribution I think
+
+## here's how we fixed it:
+
+outcome <- gayta %>%
+  filter(cns_tot_hh > 100) %>%
+  select(geoid10, tax_mjoint, mjoint_ss, cns_tot_hh, cns_upss, parade_flag, count_bars, totindex) %>%
+  mutate(rate_tax = (mjoint_ss*1000)/tax_mjoint,
+         rate_upss = (cns_upss*1000)/cns_tot_hh,
+         norm_tax = rate_tax/max(rate_tax, na.rm=T),
+         norm_upss = rate_upss/max(rate_upss, na.rm=T),
+         norm_bars = count_bars/20) %>%
+  # calc sean index
+  mutate(sean_index = (40*norm_tax) + (40*norm_upss) + (10*parade_flag) + (10*norm_bars)) %>%
+  drop_na() %>% 
+  mutate(yeo_index = VGAM::yeo.johnson(sean_index, lambda = -0.268, inverse = F)) %>%
+  transmute(zip_code = as.factor(geoid10), gayborhood_index = yeo_index)
+
+# save her out!!
+
+save(outcome, file = "data/processed/outcome_var.rda")
+
+# ESSENTIALLY. WHAT WE HAVE LEARNED HERE TODAY. IS THAT WE NEED THIS YEO TRANSFORM
+
+# AND SOMETIMES YOU HAVE TO MAKE YOUR OWN METRIC OF QUEERNESS STOREBOUGHT IS NOT
+
+# ALWAYS GOOD ENOUGH
+
+
+# check some stuff 
+
+outcome %>%
+  mutate(test = VGAM::yeo.johnson(yeo_index, lambda = -0.268, inverse = T)) %>%
+  ggplot(aes(x = yeo_index)) +
+  geom_density()
+View()
+
+
+
+# here are some notes/what happened along the way:
+
+
+
+
+
+# so actually some of these zip codes dont have anyone living in them LMFAO
+
+gayta %>%
+  group_by(totindex) %>%
+  count()
+
+# 381 zeros... yikes!
+
+gayta %>%
+  #group_by(cns_tot_hh) %>%
+  summarize(count = n(),
+            median = median(cns_tot_hh),
+            mean = mean(cns_tot_hh)) 
+
+# if you look at some of the ones with less than 100 total households,., they're literally
+# not real zipcodes so. we don't need those
+
+
+gayta_no100 <- gayta %>%
+  filter(cns_tot_hh > 100)
+
+gayta_no100 %>%
+  group_by(totindex) %>%
+  count()
+
+# ok 255 phew
+
+# what are our zeros?
+
+zeros <- gayta_no100 %>%
+  filter(totindex == 0)
+
+# 94104 definitely has the wrong calculation
+
+
+## test
+
+gayta %>%
+  mutate(sean_ssindex_weight = (ss_index*41.86682)/(58.41252)) %>%
+  select(sean_ssindex_weight, ss_index_weight) %>%
+  View()
+
+gayta %>%
+  mutate(sean_ssindex_weight = (ss_index*70)/(100)) %>%
+  select(sean_ssindex_weight, ss_index_weight) %>%
+  View()
+  
+gayta %>%
+  mutate(weight_ss = (ss_index_weight)/ss_index) %>%
+  View()
+
+# ss index weight is about 41.86682
+
+gayta %>%
+  mutate(sean_mmtax_weight = (tax_rate_mm*70)/(174.5283)) %>%
+  select(sean_mmtax_weight, mm_tax) %>%
+  View()
+  
+  
+  
+  
 

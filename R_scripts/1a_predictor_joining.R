@@ -10,9 +10,7 @@ load("data/processed/commuter_data.rda")
 
 # combine datasets ----
 ## load outcome variable ----
-outcome <- read_csv("data/raw/gay-ta.csv") %>% 
-  janitor::clean_names() %>% 
-  transmute(zip_code = as.factor(geoid10), gayborhood_index = totindex)
+load("data/processed/outcome_var.rda")
 
 combined_datasets <- outcome %>% 
   inner_join(census_demographic, by = "zip_code") %>% 

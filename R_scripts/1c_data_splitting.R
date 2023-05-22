@@ -12,26 +12,14 @@ set.seed(1)
 load("data/processed/combined_datasets.rda")
 load("data/processed/lasso_var_selection.rda")
 
-# log10 transform and select relevant variables ----
-
-combined_datasets_wlog <- combined_datasets %>%
-  # i read this as without loss of generality! too much math/econ for me oops
-  select(zip_code, gayborhood_index, relevant_predictors$term[-1]) %>% 
-  mutate(log_gbdex = log10(gayborhood_index),
-         log_gbdex = case_when(
-           log_gbdex == -Inf ~ -2,
-           TRUE ~ log_gbdex
-         )) %>%
-  select(!gayborhood_index) 
-
 # split data ----
-split <- initial_split(combined_datasets_wlog, prop = 0.8, strata = log_gbdex)
+split <- initial_split(combined_datasets, prop = 0.8, strata = gayborhood_index)
 
 train <- training(split)
 test <- testing(split)
 
 # fold data ----
-folds <- vfold_cv(train, v = 8, repeats = 5, strata = log_gbdex)
+folds <- vfold_cv(train, v = 8, repeats = 5, strata = gayborhood_index)
 
 # save ----
 save(folds, split, train, file = "data/processed/split_data.rda")
