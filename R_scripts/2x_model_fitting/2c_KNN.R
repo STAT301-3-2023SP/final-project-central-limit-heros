@@ -22,16 +22,13 @@ set.seed(702)
 ########################################################################################################
 
 
-knn_recipe <- recipe(log_gbdex ~ ., data = train) %>%
+knn_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
   step_nzv(all_predictors()) %>%
   update_role(zip_code, new_role = "id") %>%
-  step_impute_median(all_numeric_predictors()) %>% # Median imputation -> probably not best
+  step_impute_knn(all_numeric_predictors()) %>%
   step_normalize(all_numeric_predictors()) %>%
-  step_pca(all_numeric_predictors(), threshold = tune()) %>%
   step_dummy(all_nominal_predictors()) 
 
-  # step_spline_b() Maybe add splines?
-  
 
 ########################################################################################################
 # MODEL + WORKLOW SPECS ----
@@ -53,8 +50,7 @@ knn_workflow <- workflow() %>%
 
 knn_grid <- extract_parameter_set_dials(knn_workflow) %>%
   update(neighbors = neighbors(range = c(5,40)),
-         dist_power = dist_power(range = c(1,4)),
-         threshold = threshold(range = c(.9, .99))) %>%
+         dist_power = dist_power(range = c(1,4))) %>%
   grid_regular(levels = 3)
 
 ctrl_grid <- control_stack_grid()
@@ -63,6 +59,8 @@ ctrl_bayes <- control_stack_bayes()
 
 metrics <- metric_set(rmse, ccc)
 
+tic.clearlog()
+tic("KNN")
 
 knn_tuned <- knn_workflow %>%
   tune_grid(
@@ -72,12 +70,45 @@ knn_tuned <- knn_workflow %>%
     metrics = metrics
   )
 
+toc(log = TRUE)
+
+# save runtime info
+
+knn_time_log <- tic.log(format = FALSE)
+
+elapsed_time <- knn_time_log[[1]]$toc - knn_time_log[[1]]$tic
+
+knn_time_data <- tribble(
+  ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
+  "K-Nearest Neighbors", elapsed_time, nrow(knn_grid), 8, 5, 1
+) %>%
+  mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
+
+########################################################################
+# NOW DO BAYES
+########################################################################
+
 knn_bayes <- knn_workflow %>%
   # iterative tuning with `tune_bayes()`
   tune_bayes(resamples = folds,
              initial = knn_tuned,
              control = ctrl_bayes,
              iter = 7)
+
+########################################################################
+## HOW LONG DID BAYESIAN ITERATION TAKE?
+
+knn_time_log <- tic.log(format = FALSE)
+
+elapsed_time <- knn_time_log[[1]]$toc - knn_time_log[[1]]$tic
+
+knn_time_data <- knn_time_data %>%
+  mutate(Bayesian_time_s = elapsed_time)
+
+# save time data
+save(knn_time_data, file = "results/model_times/knn_time_data.rda")
+
+########################################################################
 
 knn_workflow_tuned <- knn_workflow %>% 
   finalize_workflow(select_best(knn_bayes, metric = "rmse"))
@@ -86,20 +117,5 @@ knn_final_model <- fit(knn_workflow_tuned, train)
 
 # Save model objects
 
-# maybe don't even fit models in this file? but could be helpful
-
-save(knn_workflow_tuned, knn_final_model, file = "results/model_fits/knn_model.rda")
-
-
-########################################################################################################
-# PREDICTION + ASSESSMENT: SHOULD PROBABLY BE MOVED TO SEPARATE FILE (?) ----
-########################################################################################################
-
-load("data/processed/test_data.rda")
-
-knn_preds <- predict(knn_final_model, new_data = test) %>% 
-  bind_cols(test %>% select(log_gbdex)) # %>% 
- # metrics(truth = popularity, estimate = .pred)
-
-save(knn_preds, file = "results/predictions/knn_preds.rda")
+save(knn_bayes, knn_workflow, knn_workflow_finalized, knn_final_model, file = "results/model_fits/knn_model.rda")
 
