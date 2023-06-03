@@ -1,0 +1,108 @@
+---
+title: "Queer Coded: Supervised ML to Predict LGBTQ+ Acceptance in American Neighborhoods"
+subtitle: "Final Project Progress Memo 2-- STAT 301-3 Data Science 3 with R"
+author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
+date: today
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    link-external-newwindow: true
+    df-print: paged
+    footnotes-hover: true
+title-block-banner: images/pride-geotag.png
+title-block-banner-color: black
+execute:
+  echo: false
+  warning: false
+from: markdown+emoji
+editor_options: 
+  chunk_output_type: console
+---
+::: {.callout-tip icon="false"}
+## Github Repo Link
+
+<https://github.com/STAT301-3-2023SP/final-project-central-limit-heros>
+:::
+
+
+# outline:
+
+## intro : sean talks about why gay people are cool
+
+citations and such
+
+
+## Data collection
+
+we did a lot of work here lowkey . we should talk about it
+
+
+## EDA 
+
+did we just not have missingness?? i think there was some or else what are we imputing... lol.
+
+DEFINITELY talk about the yeo johnson transform or whatever we did there. that was tea .
+
+
+# overview of modeling process
+
+```{r}
+#| label: mermaiddd
+
+DiagrammeR::mermaid("
+  graph LR
+    A[Tree Data]-->D(Feature Engineering)
+    B[Census Data]-->D
+    C[Bike Data]-->D
+    D-->E(Initial Modeling)
+    E-->F[Model Selection]
+    E-->F
+    E-->F
+    E-->F
+    E-->F
+    E-->F
+    F-->G[Ensemble Fitting]
+    F-->G
+    F-->G
+    G-->H(Model Assessment)
+")
+```
+
+
+## Initial modeling
+
+we fit these model types:
+
+- Penalized Elastic Net Regression
+    - with and without [partial least squares](https://en.wikipedia.org/wiki/Partial_least_squares_regression)
+
+- Random Forest + Boosted Tree (?)
+
+- K-Nearest Neighbors
+
+- Neural Networks 
+  - Basic neural networks using `nnet` in R
+  - Using `keras` and [Tensorflow](https://www.tensorflow.org/) from python through R
+  
+- Multivariate Adaptive Regression Splines
+
+- Cubist ensemble regression
+
+
+***WHATS THE SITCH WITH OTHER RECIPES?? DO WE WANT TO TRY THEM NOW??***
+
+
+## Model selection 
+
+we picked the three best ones
+
+## ensemble modeling
+
+yay for stacks. we might actually want to try [baguette](https://baguette.tidymodels.org/index.html) instead, i feel like it slays, but i didnt do the reading so i owuldnt know.
+
+
+## final results
+
+happy pride <3 such a well timed project tbh
+

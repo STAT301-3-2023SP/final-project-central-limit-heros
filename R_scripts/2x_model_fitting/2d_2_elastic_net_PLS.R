@@ -1,8 +1,6 @@
 ########################################################################################################
-# K-Nearest Neighbors Model Fitting ----
+# Elastic Net Fitting: PCA EDITION ----
 ########################################################################################################
-
-# K-nearest neighbors <3
 
 ########################################################################################################
 # LOAD PACKAGES + DATA ----
@@ -21,37 +19,35 @@ set.seed(702)
 # RECIPE ----
 ########################################################################################################
 
-
-knn_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
+en_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
   step_nzv(all_predictors()) %>%
   update_role(zip_code, new_role = "id") %>%
   step_impute_knn(all_numeric_predictors()) %>%
+  step_dummy(all_nominal_predictors()) %>%
   step_normalize(all_numeric_predictors()) %>%
-  step_dummy(all_nominal_predictors()) 
+  step_interact(~all_predictors():all_predictors()) %>%
+  step_pls(all_predictors(), num_comp = tune(), outcome = "gayborhood_index")
 
 
 ########################################################################################################
 # MODEL + WORKLOW SPECS ----
 ########################################################################################################
 
-knn_spec <-
-  nearest_neighbor(neighbors = tune(), dist_power = tune()) %>%
-  set_engine('kknn') %>%
-  set_mode('regression')
+en_spec <-
+  linear_reg(penalty = tune(), mixture = tune()) %>%
+  set_engine('glmnet')
 
-knn_workflow <- workflow() %>% 
-  add_model(knn_spec) %>% 
-  add_recipe(knn_recipe)
-
+en_workflow <- workflow() %>% 
+  add_model(en_spec) %>% 
+  add_recipe(en_recipe)
 
 ########################################################################################################
 # FITTING + TUNING ----
 ########################################################################################################
 
-knn_grid <- extract_parameter_set_dials(knn_workflow) %>%
-  update(neighbors = neighbors(range = c(5,40)),
-         dist_power = dist_power(range = c(1,4))) %>%
-  grid_regular(levels = 3)
+en_grid <- extract_parameter_set_dials(en_workflow) %>% 
+  update(num_comp = num_comp(c(1, 30))) %>%
+  grid_regular(levels = 5)
 
 ctrl_grid <- control_resamples(verbose = TRUE, save_pred = TRUE, save_workflow = TRUE)
 
@@ -60,29 +56,27 @@ ctrl_bayes <- control_bayes(verbose = TRUE, save_pred = TRUE, save_workflow = TR
 metrics <- metric_set(rmse, ccc)
 
 tic.clearlog()
-tic("KNN")
+tic("Elastic Net")
 
-knn_tuned <- knn_workflow %>%
+en_tuned <- en_workflow %>%
   tune_grid(
     resamples = folds, 
-    grid = knn_grid,
+    grid = en_grid,
     control = ctrl_grid,
     metrics = metrics
   )
-
-save(knn_tuned, file = "results/model_fits/knn_tuned.rda")
 
 toc(log = TRUE)
 
 # save runtime info
 
-knn_time_log <- tic.log(format = FALSE)
+en_time_log <- tic.log(format = FALSE)
 
-elapsed_time <- knn_time_log[[1]]$toc - knn_time_log[[1]]$tic
+elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
 
-knn_time_data <- tribble(
+en_time_data <- tribble(
   ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
-  "K-Nearest Neighbors", elapsed_time, nrow(knn_grid), 8, 5, 1
+  "Elastic Net", elapsed_time, nrow(en_grid), 8, 5, 1
 ) %>%
   mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
 
@@ -90,27 +84,31 @@ knn_time_data <- tribble(
 # NOW DO BAYES
 ########################################################################
 
-knn_bayes <- knn_workflow %>%
+en_bayes_pca <- en_workflow %>%
   # iterative tuning with `tune_bayes()`
   tune_bayes(resamples = folds,
-             initial = knn_tuned,
+             initial = en_tuned,
              control = ctrl_bayes,
-             iter = 7)
-
-save(knn_bayes, file = "results/model_fits/knn_bayes.rda")
+             iter = 10)
 
 ########################################################################
 ## HOW LONG DID BAYESIAN ITERATION TAKE?
 
-knn_time_log <- tic.log(format = FALSE)
+en_time_log <- tic.log(format = FALSE)
 
-elapsed_time <- knn_time_log[[1]]$toc - knn_time_log[[1]]$tic
+elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
 
-knn_time_data <- knn_time_data %>%
+en_pca_time_data <- en_time_data %>%
   mutate(Bayesian_time_s = elapsed_time,
-         iterations = 7,
+         iterations = 10,
          bayesian_per_iter = Bayesian_time_s/iterations)
 
 # save time data
-save(knn_time_data, file = "results/model_times/knn_time_data.rda")
+save(en_pca_time_data, file = "results/model_times/en_pca_time_data.rda")
+
+########################################################################
+
+# Save model objects
+
+save(en_bayes_pca, file = "results/model_fits/en_pca_model.rda")
 
