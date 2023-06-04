@@ -10,17 +10,23 @@ set.seed(1)
 
 # load data ----
 load("data/processed/combined_datasets.rda")
-load("data/processed/lasso_var_selection.rda")
+load("data/processed/lasso_var_selection_01.rda")
+
+# select lassoed variables ----
+relevant_predictors <- relevant_predictors %>% slice(2:nrow(.))
+
+lasso_dataset <- combined_datasets %>% 
+  select(zip_code, gayborhood_index, all_of(relevant_predictors$term))
 
 # split data ----
-split <- initial_split(combined_datasets, prop = 0.8, strata = gayborhood_index)
+split <- initial_split(lasso_dataset, prop = 0.8, strata = gayborhood_index)
 
 train <- training(split)
 test <- testing(split)
 
 # fold data ----
-folds <- vfold_cv(train, v = 8, repeats = 5, strata = gayborhood_index)
+folds <- vfold_cv(train, v = 5, repeats = 3, strata = gayborhood_index)
 
 # save ----
-save(folds, split, train, file = "data/processed/split_data.rda")
-save(test, file = "data/processed/test_data.rda")
+save(folds, split, train, file = "data/processed/split_data_lasso.rda")
+save(test, file = "data/processed/test_data_lasso.rda")
