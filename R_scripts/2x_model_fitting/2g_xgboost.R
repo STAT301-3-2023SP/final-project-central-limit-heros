@@ -96,7 +96,9 @@ xgboost_time_log <- tic.log(format = FALSE)
 elapsed_time <- xgboost_time_log[[1]]$toc - xgboost_time_log[[1]]$tic
 
 xgboost_time_data <- xgboost_time_data %>%
-  mutate(Bayesian_time_s = elapsed_time)
+  mutate(Bayesian_time_s = elapsed_time, 
+         iterations = 15,
+         bayesian_per_iter = Bayesian_time_s/iterations)
 
 # save time data
 save(xgboost_time_data, file = "results/model_times/xgboost_time_data.rda")

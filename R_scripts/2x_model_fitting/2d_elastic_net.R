@@ -12,7 +12,7 @@ library(tictoc)
 tidymodels_prefer()
 doMC::registerDoMC(cores = 8) # Vlad u will have to do the other thing for pcs <3
 
-load(file = "data/processed/split_data.rda")
+load(file = "data/processed/split_data_lasso.rda")
 set.seed(702)
 
 ########################################################################################################
@@ -72,7 +72,7 @@ elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
 
 en_time_data <- tribble(
   ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
-  "Elastic Net", elapsed_time, nrow(en_grid), 8, 5, 1
+  "Elastic Net", elapsed_time, nrow(en_grid), 5, 3, 1
 ) %>%
   mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
 
@@ -95,7 +95,9 @@ en_time_log <- tic.log(format = FALSE)
 elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
 
 en_time_data <- en_time_data %>%
-  mutate(Bayesian_time_s = elapsed_time)
+  mutate(Bayesian_time_s = elapsed_time,
+         iterations = 15,
+         bayesian_per_iter = Bayesian_time_s/iterations)
 
 # save time data
 save(en_time_data, file = "results/model_times/en_time_data.rda")
