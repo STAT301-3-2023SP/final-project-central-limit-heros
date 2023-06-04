@@ -60,7 +60,7 @@ rf_workflow <- workflow() %>%
 ########################################################################################################
 
 rf_grid <- rf_params %>% 
-  grid_regular(levels = 3)
+  grid_regular(levels = 2)
 
 ctrl_grid <- control_resamples(verbose = TRUE, save_pred = TRUE, save_workflow = TRUE)
 
@@ -102,7 +102,8 @@ rf_bayes <- rf_workflow %>%
   tune_bayes(resamples = folds,
              initial = rf_tuned,
              control = ctrl_bayes,
-             iter = 10)
+             iter = 5,
+             param_info = rf_params)
 
 ########################################################################
 ## HOW LONG DID BAYESIAN ITERATION TAKE?
