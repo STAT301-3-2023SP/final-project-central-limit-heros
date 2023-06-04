@@ -10,15 +10,16 @@ library(tidyverse)
 library(tidymodels)
 tidymodels_prefer()
 library(tictoc)
-library(doParallel)
+#library(doParallel)
 
 load(file = "data/processed/split_data_lasso.rda")
 
 set.seed(702)
 
 #parallel processing
-cl <- makePSOCKcluster(3)
-registerDoParallel(cl)
+#cl <- makePSOCKcluster(3)
+#registerDoParallel(cl)
+doMC::registerDoMC(cores = 6)
 
 ########################################################################################################
 # RECIPE ----
@@ -125,5 +126,5 @@ save(rf_time_data, file = "results/model_times/rf_time_data.rda")
 save(rf_bayes, file = "results/model_fits/rf_model.rda")
 
 #end parallel processing
-stopCluster(cl)
+#stopCluster(cl)
 
