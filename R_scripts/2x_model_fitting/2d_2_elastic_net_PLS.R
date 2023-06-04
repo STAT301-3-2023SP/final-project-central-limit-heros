@@ -1,5 +1,5 @@
 ########################################################################################################
-# Elastic Net Fitting: PCA EDITION ----
+# Elastic Net Fitting: PLS EDITION ----
 ########################################################################################################
 
 ########################################################################################################
@@ -12,7 +12,7 @@ library(tictoc)
 tidymodels_prefer()
 doMC::registerDoMC(cores = 6) # Vlad u will have to do the other thing for pcs <3
 
-load(file = "data/processed/split_data.rda")
+load(file = "data/processed/split_data_lasso.rda")
 set.seed(702)
 
 ########################################################################################################
@@ -25,7 +25,7 @@ en_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
   step_impute_knn(all_numeric_predictors()) %>%
   step_dummy(all_nominal_predictors()) %>%
   step_normalize(all_numeric_predictors()) %>%
-  #step_interact(~all_predictors():all_predictors()) %>%
+  step_interact(~all_predictors():all_predictors()) %>%
   step_pls(all_predictors(), num_comp = tune(), outcome = "gayborhood_index")
 
 
@@ -46,7 +46,7 @@ en_workflow <- workflow() %>%
 ########################################################################################################
 
 en_grid <- extract_parameter_set_dials(en_workflow) %>% 
-  update(num_comp = num_comp(c(1, 30))) %>%
+  update(num_comp = num_comp(c(5, 50))) %>%
   grid_regular(levels = 5)
 
 ctrl_grid <- control_resamples(verbose = TRUE, save_pred = TRUE, save_workflow = TRUE)
@@ -76,7 +76,7 @@ elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
 
 en_time_data <- tribble(
   ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
-  "Elastic Net", elapsed_time, nrow(en_grid), 8, 5, 1
+  "Elastic Net", elapsed_time, nrow(en_grid), 5, 3, 1
 ) %>%
   mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
 

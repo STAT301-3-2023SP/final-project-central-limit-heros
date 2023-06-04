@@ -14,7 +14,7 @@ library(tictoc)
 tidymodels_prefer()
 doMC::registerDoMC(cores = 6) # Vlad u will have to do the other thing for pcs <3
 
-load(file = "data/processed/split_data.rda")
+load(file = "data/processed/split_data_lasso.rda")
 set.seed(702)
 
 ########################################################################################################
@@ -82,7 +82,7 @@ elapsed_time <- knn_time_log[[1]]$toc - knn_time_log[[1]]$tic
 
 knn_time_data <- tribble(
   ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
-  "K-Nearest Neighbors", elapsed_time, nrow(knn_grid), 8, 5, 1
+  "K-Nearest Neighbors", elapsed_time, nrow(knn_grid), 5, 3, 1
 ) %>%
   mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
 

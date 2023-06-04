@@ -12,7 +12,7 @@ library(tictoc)
 tidymodels_prefer()
 doMC::registerDoMC(cores = 8) # Vlad u will have to do the other thing for pcs <3
 
-load(file = "data/processed/split_data.rda")
+load(file = "data/processed/split_data_lasso.rda")
 set.seed(702)
 
 ########################################################################################################
@@ -73,7 +73,7 @@ elapsed_time <- xgboost_time_log[[1]]$toc - xgboost_time_log[[1]]$tic
 
 xgboost_time_data <- tribble(
   ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
-  "Neural Network", elapsed_time, nrow(xgboost_grid), 8, 5, 1
+  "Neural Network", elapsed_time, nrow(xgboost_grid), 5, 3, 1
 ) %>%
   mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
 
