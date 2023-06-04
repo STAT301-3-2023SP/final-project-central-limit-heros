@@ -95,7 +95,7 @@ knn_bayes <- knn_workflow %>%
   tune_bayes(resamples = folds,
              initial = knn_tuned,
              control = ctrl_bayes,
-             iter = 7)
+             iter = 15)
 
 save(knn_bayes, file = "results/model_fits/knn_bayes.rda")
 
@@ -108,7 +108,7 @@ elapsed_time <- knn_time_log[[1]]$toc - knn_time_log[[1]]$tic
 
 knn_time_data <- knn_time_data %>%
   mutate(Bayesian_time_s = elapsed_time,
-         iterations = 7,
+         iterations = 15,
          bayesian_per_iter = Bayesian_time_s/iterations)
 
 # save time data

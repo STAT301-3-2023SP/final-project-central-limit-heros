@@ -1,6 +1,8 @@
 ########################################################################################################
-# Elastic Net Fitting: PCA EDITION ----
+# Cubist Ensemble Regression Model Fitting ----
 ########################################################################################################
+
+# This is tree based (I think)
 
 ########################################################################################################
 # LOAD PACKAGES + DATA ----
@@ -9,6 +11,7 @@
 library(tidyverse)
 library(tidymodels)
 library(tictoc)
+library(rules) # parsnip extension package needed for cubist ensemble regression
 tidymodels_prefer()
 doMC::registerDoMC(cores = 6) # Vlad u will have to do the other thing for pcs <3
 
@@ -19,35 +22,35 @@ set.seed(702)
 # RECIPE ----
 ########################################################################################################
 
-en_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
+
+cer_recipe <- recipe(gayborhood_index ~ ., data = train) %>%
   step_nzv(all_predictors()) %>%
   update_role(zip_code, new_role = "id") %>%
   step_impute_knn(all_numeric_predictors()) %>%
-  step_dummy(all_nominal_predictors()) %>%
   step_normalize(all_numeric_predictors()) %>%
-  #step_interact(~all_predictors():all_predictors()) %>%
-  step_pls(all_predictors(), num_comp = tune(), outcome = "gayborhood_index")
+  step_dummy(all_nominal_predictors()) 
 
 
 ########################################################################################################
 # MODEL + WORKLOW SPECS ----
 ########################################################################################################
 
-en_spec <-
-  linear_reg(penalty = tune(), mixture = tune()) %>%
-  set_engine('glmnet')
+cer_spec <- cubist_rules(committees = tune(), neighbors = tune(), max_rules = tune()) %>%
+  set_engine('Cubist') %>%
+  set_mode('regression')
 
-en_workflow <- workflow() %>% 
-  add_model(en_spec) %>% 
-  add_recipe(en_recipe)
+
+cer_workflow <- workflow() %>% 
+  add_model(cer_spec) %>% 
+  add_recipe(cer_recipe)
+
 
 ########################################################################################################
 # FITTING + TUNING ----
 ########################################################################################################
 
-en_grid <- extract_parameter_set_dials(en_workflow) %>% 
-  update(num_comp = num_comp(c(1, 30))) %>%
-  grid_regular(levels = 5)
+cer_grid <- extract_parameter_set_dials(cer_workflow) %>%
+  grid_regular(levels = 3)
 
 ctrl_grid <- control_resamples(verbose = TRUE, save_pred = TRUE, save_workflow = TRUE)
 
@@ -56,27 +59,29 @@ ctrl_bayes <- control_bayes(verbose = TRUE, save_pred = TRUE, save_workflow = TR
 metrics <- metric_set(rmse, ccc)
 
 tic.clearlog()
-tic("Elastic Net")
+tic("KNN")
 
-en_tuned <- en_workflow %>%
+cer_tuned <- cer_workflow %>%
   tune_grid(
     resamples = folds, 
-    grid = en_grid,
+    grid = cer_grid,
     control = ctrl_grid,
     metrics = metrics
   )
+
+save(cer_tuned, file = "results/model_fits/cer_tuned.rda")
 
 toc(log = TRUE)
 
 # save runtime info
 
-en_time_log <- tic.log(format = FALSE)
+cer_time_log <- tic.log(format = FALSE)
 
-elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
+elapsed_time <- cer_time_log[[1]]$toc - cer_time_log[[1]]$tic
 
-en_time_data <- tribble(
+cer_time_data <- tribble(
   ~ "model", ~"elapsed_time_s", ~"grid_length", ~"folds", ~"repeats", ~"recipes",
-  "Elastic Net", elapsed_time, nrow(en_grid), 8, 5, 1
+  "K-Nearest Neighbors", elapsed_time, nrow(cer_grid), 8, 5, 1
 ) %>%
   mutate(avg_time_per_model_ms = (1000*elapsed_time_s)/(grid_length*folds*repeats*recipes))
 
@@ -84,31 +89,27 @@ en_time_data <- tribble(
 # NOW DO BAYES
 ########################################################################
 
-en_bayes_pca <- en_workflow %>%
+cer_bayes <- cer_workflow %>%
   # iterative tuning with `tune_bayes()`
   tune_bayes(resamples = folds,
-             initial = en_tuned,
+             initial = cer_tuned,
              control = ctrl_bayes,
              iter = 10)
+
+save(cer_bayes, file = "results/model_fits/cer_bayes.rda")
 
 ########################################################################
 ## HOW LONG DID BAYESIAN ITERATION TAKE?
 
-en_time_log <- tic.log(format = FALSE)
+cer_time_log <- tic.log(format = FALSE)
 
-elapsed_time <- en_time_log[[1]]$toc - en_time_log[[1]]$tic
+elapsed_time <- cer_time_log[[1]]$toc - cer_time_log[[1]]$tic
 
-en_pca_time_data <- en_time_data %>%
+cer_time_data <- cer_time_data %>%
   mutate(Bayesian_time_s = elapsed_time,
          iterations = 10,
          bayesian_per_iter = Bayesian_time_s/iterations)
 
 # save time data
-save(en_pca_time_data, file = "results/model_times/en_pca_time_data.rda")
-
-########################################################################
-
-# Save model objects
-
-save(en_bayes_pca, file = "results/model_fits/en_pca_model.rda")
+save(cer_time_data, file = "results/model_times/cer_time_data.rda")
 
