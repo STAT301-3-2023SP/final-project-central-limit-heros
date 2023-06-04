@@ -9,7 +9,12 @@
 /data/raw/ACSDP5Y2021.DP04-Data.csv
 /data/raw/census_demographic/census_demographic.csv
 /data/raw/census_commuting/ACSST5Y2015.S0802-Data.csv
+<<<<<<< HEAD
 /results/model_fits/*.rda
+=======
+/results/model_fits/rf_model.rda
+/results/model_fits/knn_tuned.rda
+>>>>>>> 1d69e1eb6c9475c856a5bf19d0815cc68938000d
 # if all datasets are too large then use /data/*.csv (only ignores CSVs)
 # if you have other file types then use appropriate extension ./data/*.rds
 
