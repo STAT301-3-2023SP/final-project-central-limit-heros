@@ -19,6 +19,25 @@ from: markdown+emoji
 editor_options: 
   chunk_output_type: console
 ---
+
+```{r}
+#| label: initial-loading
+
+# load packages
+library(tidyverse)
+library(tidymodels)
+library(gt)
+tidymodels_prefer()
+
+# load data objects
+load("results/initial_comp.rda")
+
+
+
+```
+
+
+
 ::: {.callout-tip icon="false"}
 ## Github Repo Link
 
@@ -99,6 +118,28 @@ we fit these model types:
 - Multivariate Adaptive Regression Splines
 
 - Cubist ensemble regression
+
+
+Our results are that... neural networks flopped, whatever the rnoein cubist ensemble regression is did well:
+
+```{r}
+#| label: initial-comp-table
+
+initial_model_comparison %>%
+  gt::gt() %>%
+  gt::tab_header(title = "Initial Model Comparison") %>%
+  gt::tab_style(
+    style = list(
+      cell_text(color = "black",
+                style = "oblique"),
+      cell_fill(color = "darkseagreen2")
+    ),
+    locations = cells_body(
+      rows = c(1,2,3))
+  )
+
+```
+
 
 
 ***WHATS THE SITCH WITH OTHER RECIPES?? DO WE WANT TO TRY THEM NOW??***

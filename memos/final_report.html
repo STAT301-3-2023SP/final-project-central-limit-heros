@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Vlad Nevirkovets, Sean Pascoe, Dylan Yan">
-<meta name="dcterms.date" content="2023-06-02">
+<meta name="dcterms.date" content="2023-06-05">
 
 <title>Queer Coded: Supervised ML to Predict LGBTQ+ Acceptance in American Neighborhoods</title>
 <style>
@@ -6382,7 +6382,7 @@ window.onload = function() {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">June 2, 2023</p>
+        <p class="date">June 5, 2023</p>
       </div>
     </div>
     
@@ -6396,12 +6396,10 @@ window.onload = function() {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#outline" id="toc-outline" class="nav-link active" data-scroll-target="#outline">outline:</a>
-  <ul class="collapse">
-  <li><a href="#intro-sean-talks-about-why-gay-people-are-cool" id="toc-intro-sean-talks-about-why-gay-people-are-cool" class="nav-link" data-scroll-target="#intro-sean-talks-about-why-gay-people-are-cool">intro : sean talks about why gay people are cool</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#outcome-variable" id="toc-outcome-variable" class="nav-link" data-scroll-target="#outcome-variable">Outcome Variable</a></li>
   <li><a href="#data-collection" id="toc-data-collection" class="nav-link" data-scroll-target="#data-collection">Data collection</a></li>
   <li><a href="#eda" id="toc-eda" class="nav-link" data-scroll-target="#eda">EDA</a></li>
-  </ul></li>
   <li><a href="#overview-of-modeling-process" id="toc-overview-of-modeling-process" class="nav-link" data-scroll-target="#overview-of-modeling-process">overview of modeling process</a>
   <ul class="collapse">
   <li><a href="#initial-modeling" id="toc-initial-modeling" class="nav-link" data-scroll-target="#initial-modeling">Initial modeling</a></li>
@@ -6417,6 +6415,9 @@ window.onload = function() {
 
 
 
+<div class="cell">
+
+</div>
 <div class="callout-tip callout callout-style-default no-icon callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -6430,11 +6431,20 @@ Github Repo Link
 <p><a href="https://github.com/STAT301-3-2023SP/final-project-central-limit-heros" class="uri">https://github.com/STAT301-3-2023SP/final-project-central-limit-heros</a></p>
 </div>
 </div>
-<section id="outline" class="level1">
-<h1>outline:</h1>
-<section id="intro-sean-talks-about-why-gay-people-are-cool" class="level2">
-<h2 class="anchored" data-anchor-id="intro-sean-talks-about-why-gay-people-are-cool">intro : sean talks about why gay people are cool</h2>
-<p>citations and such</p>
+<section id="introduction" class="level3">
+<h3 class="anchored" data-anchor-id="introduction">Introduction</h3>
+<p>Neighborhoods with a high queer population, or <a href="https://en.wikipedia.org/wiki/Gay_village"><em>Gayborhoods</em></a>, have been urban areas in which LGBTQ+ people have found community and built culture worldwide. However, these geographic areas serve as much more than the sexuality of their constituents, and have been cited as yielding robust creative economies, as well as a welcoming environment for those of many identities. Knowing this, the identity of a certain locale as a Gayborhood becomes a crucial sociological metric, with neighborhoods with a more prevalent queer identity driving social liberalism in the face of prejudice. Our analysis thus focuses on building a <strong>location-based regression model</strong> that uses a variety of parameters including housing, land use, and non-queer demographic data <strong>to predict Gayborhood degree</strong>, and, in so doing, determine whether an area is suitable for queer folks with the goal of advancing understanding of liberal areas.</p>
+</section>
+<section id="outcome-variable" class="level3">
+<h3 class="anchored" data-anchor-id="outcome-variable">Outcome Variable</h3>
+<p>In order to rank Gayborhood status, we are using a published dataset <a href="https://data.world/the-pudding/gayborhoods">from data world</a><a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> that was analyzed to display distribution of queer communities in Jan Diehm’s 2018 article <a href="https://pudding.cool/2018/06/gayborhoods/"><em>Men are from Chelsea, Women are from Park Slope</em></a>. Specifically, the metrics in this dataset are combined to form a Gayborhood index, which we will use as the supervising variable for our machine learning project. This index is a holistic assessment of queerness, derived primarily from the following measures:</p>
+<ul>
+<li>Same-sex joint tax filers</li>
+<li>Unmarried partner same sex households</li>
+<li>Number of Gay Bars</li>
+<li>Whether or not a pride parade routes through the region</li>
+</ul>
+<p>In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. Because of this heavy right skew, we are choosing to model the log 10 transformation of the data, which is significantly more normal, and will thus fit better with our chosen models:</p>
 </section>
 <section id="data-collection" class="level2">
 <h2 class="anchored" data-anchor-id="data-collection">Data collection</h2>
@@ -6445,13 +6455,12 @@ Github Repo Link
 <p>did we just not have missingness?? i think there was some or else what are we imputing… lol.</p>
 <p>DEFINITELY talk about the yeo johnson transform or whatever we did there. that was tea .</p>
 </section>
-</section>
 <section id="overview-of-modeling-process" class="level1">
 <h1>overview of modeling process</h1>
 <div class="cell">
 <div class="cell-output-display">
-<div class="DiagrammeR html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-d0cbf0f53ee04ee261c4" style="width:100%;height:464px;"></div>
-<script type="application/json" data-for="htmlwidget-d0cbf0f53ee04ee261c4">{"x":{"diagram":"\n  graph LR\n    A[Tree Data]-->D(Feature Engineering)\n    B[Census Data]-->D\n    C[Bike Data]-->D\n    D-->E(Initial Modeling)\n    E-->F[Model Selection]\n    E-->F\n    E-->F\n    E-->F\n    E-->F\n    E-->F\n    F-->G[Ensemble Fitting]\n    F-->G\n    F-->G\n    G-->H(Model Assessment)\n"},"evals":[],"jsHooks":[]}</script>
+<div class="DiagrammeR html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-68945e81c5e9187cb721" style="width:100%;height:464px;"></div>
+<script type="application/json" data-for="htmlwidget-68945e81c5e9187cb721">{"x":{"diagram":"\n  graph LR\n    A[Tree Data]-->D(Feature Engineering)\n    B[Census Data]-->D\n    C[Bike Data]-->D\n    D-->E(Initial Modeling)\n    E-->F[Model Selection]\n    E-->F\n    E-->F\n    E-->F\n    E-->F\n    E-->F\n    F-->G[Ensemble Fitting]\n    F-->G\n    F-->G\n    G-->H(Model Assessment)\n"},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <section id="initial-modeling" class="level2">
@@ -6472,6 +6481,456 @@ Github Repo Link
 <li><p>Multivariate Adaptive Regression Splines</p></li>
 <li><p>Cubist ensemble regression</p></li>
 </ul>
+<p>Our results are that… neural networks flopped, whatever the rnoein cubist ensemble regression is did well:</p>
+<div class="cell">
+<div class="cell-output-display">
+
+<div id="qmqbtdcppj" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#qmqbtdcppj table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#qmqbtdcppj thead, #qmqbtdcppj tbody, #qmqbtdcppj tfoot, #qmqbtdcppj tr, #qmqbtdcppj td, #qmqbtdcppj th {
+border-style: none;
+}
+#qmqbtdcppj p {
+margin: 0;
+padding: 0;
+}
+#qmqbtdcppj .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #A8A8A8;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #A8A8A8;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#qmqbtdcppj .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#qmqbtdcppj .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#qmqbtdcppj .gt_heading {
+background-color: #FFFFFF;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_col_heading {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#qmqbtdcppj .gt_column_spanner_outer {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#qmqbtdcppj .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#qmqbtdcppj .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#qmqbtdcppj .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#qmqbtdcppj .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#qmqbtdcppj .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#qmqbtdcppj .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+vertical-align: middle;
+}
+#qmqbtdcppj .gt_from_md > :first-child {
+margin-top: 0;
+}
+#qmqbtdcppj .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#qmqbtdcppj .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: solid;
+border-top-width: 1px;
+border-top-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#qmqbtdcppj .gt_stub {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+}
+#qmqbtdcppj .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#qmqbtdcppj .gt_row_group_first td {
+border-top-width: 2px;
+}
+#qmqbtdcppj .gt_row_group_first th {
+border-top-width: 2px;
+}
+#qmqbtdcppj .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#qmqbtdcppj .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#qmqbtdcppj .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_grand_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#qmqbtdcppj .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_striped {
+background-color: rgba(128, 128, 128, 0.05);
+}
+#qmqbtdcppj .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#qmqbtdcppj .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#qmqbtdcppj .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#qmqbtdcppj .gt_left {
+text-align: left;
+}
+#qmqbtdcppj .gt_center {
+text-align: center;
+}
+#qmqbtdcppj .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#qmqbtdcppj .gt_font_normal {
+font-weight: normal;
+}
+#qmqbtdcppj .gt_font_bold {
+font-weight: bold;
+}
+#qmqbtdcppj .gt_font_italic {
+font-style: italic;
+}
+#qmqbtdcppj .gt_super {
+font-size: 65%;
+}
+#qmqbtdcppj .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#qmqbtdcppj .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#qmqbtdcppj .gt_indent_1 {
+text-indent: 5px;
+}
+#qmqbtdcppj .gt_indent_2 {
+text-indent: 10px;
+}
+#qmqbtdcppj .gt_indent_3 {
+text-indent: 15px;
+}
+#qmqbtdcppj .gt_indent_4 {
+text-indent: 20px;
+}
+#qmqbtdcppj .gt_indent_5 {
+text-indent: 25px;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_heading">
+      <td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Initial Model Comparison</td>
+    </tr>
+    
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Model Type">Model Type</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Best mean RMSE">Best mean RMSE</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="Standard Error">Standard Error</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Hyperparameters used">Hyperparameters used</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="Model Type" class="gt_row gt_left" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">Cubist Ensemble Regression (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">0.328</td>
+<td headers="Standard Error" class="gt_row gt_right" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">0.004</td>
+<td headers="Hyperparameters used" class="gt_row gt_left" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">Committees = 88, Max Rules = 290, Neighbors = 0</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">Elastic Net (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">0.337</td>
+<td headers="Standard Error" class="gt_row gt_right" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">0.004</td>
+<td headers="Hyperparameters used" class="gt_row gt_left" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">Penalty = 1.1e-08, Mixture = 0.051</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">Random Forest (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">0.339</td>
+<td headers="Standard Error" class="gt_row gt_right" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">0.003</td>
+<td headers="Hyperparameters used" class="gt_row gt_left" style="color: #000000; font-style: oblique; background-color: #B4EEB4;">Mtry = 91, Trees = 1900, Min N = 3</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left">K-Nearest Neighbors (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right">0.343</td>
+<td headers="Standard Error" class="gt_row gt_right">0.003</td>
+<td headers="Hyperparameters used" class="gt_row gt_left">Neighbors = 22, Dist Power = 1</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left">Boosted Trees (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right">0.348</td>
+<td headers="Standard Error" class="gt_row gt_right">0.003</td>
+<td headers="Hyperparameters used" class="gt_row gt_left">Min N = 38, Learn Rate = 0.25, Loss Reduction = 1.2e-09</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left">Elastic Net (PLS) (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right">0.370</td>
+<td headers="Standard Error" class="gt_row gt_right">0.003</td>
+<td headers="Hyperparameters used" class="gt_row gt_left">Penalty = 0.0032, Mixture = 1</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left">Multivariate Adaptive Regression Splines (BI)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right">0.376</td>
+<td headers="Standard Error" class="gt_row gt_right">0.003</td>
+<td headers="Hyperparameters used" class="gt_row gt_left">Num Terms = 5, Prod Degree = 1</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left">Neural Network (Keras)</td>
+<td headers="Best mean RMSE" class="gt_row gt_right">0.398</td>
+<td headers="Standard Error" class="gt_row gt_right">0.004</td>
+<td headers="Hyperparameters used" class="gt_row gt_left">Penalty = 1, Hidden Units = 5</td></tr>
+    <tr><td headers="Model Type" class="gt_row gt_left">Null Model</td>
+<td headers="Best mean RMSE" class="gt_row gt_right">0.503</td>
+<td headers="Standard Error" class="gt_row gt_right">0.002</td>
+<td headers="Hyperparameters used" class="gt_row gt_left">NA</td></tr>
+  </tbody>
+  
+  
+</table>
+</div>
+</div>
+</div>
 <p><strong><em>WHATS THE SITCH WITH OTHER RECIPES?? DO WE WANT TO TRY THEM NOW??</em></strong></p>
 </section>
 <section id="model-selection" class="level2">
@@ -6488,7 +6947,13 @@ Github Repo Link
 </section>
 </section>
 
-</main>
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Jan Diehm. (2018). <em>Gayborhoods</em> [Data set]. <em>The Pudding</em>, data.world. https://data.world/the-pudding/gayborhoods. Accessed 10 April 2023.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
