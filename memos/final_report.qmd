@@ -1,6 +1,6 @@
 ---
 title: "Queer Coded: Supervised ML to Predict LGBTQ+ Acceptance in American Neighborhoods"
-subtitle: "Final Project Progress Memo 2-- STAT 301-3 Data Science 3 with R"
+subtitle: "STAT 301-3 Data Science 3 with R"
 author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
 date: today
 format: 
@@ -26,13 +26,14 @@ editor_options:
 # load packages
 library(tidyverse)
 library(tidymodels)
+library(patchwork)
 library(gt)
 tidymodels_prefer()
 
 # load data objects
 load("results/initial_comp.rda")
-
-
+load("data/processed/outcome_var.rda")
+load("data/processed/combined_datasets.rda")
 
 ```
 
@@ -60,22 +61,136 @@ In order to rank Gayborhood status, we are using a published dataset [from data 
 - Number of Gay Bars
 - Whether or not a pride parade routes through the region
 
-In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. Because of this heavy right skew, we are choosing to model the log 10 transformation of the data, which is significantly more normal, and will thus fit better with our chosen models:
-
+In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. In the Exploratory Data Analysis section, we will discuss measures to transform the outcome variable into a more favorable distribution.
 
 ## Data collection
 
-we did a lot of work here lowkey . we should talk about it
+Because this project is based primarily on data by ZCTA, a US Census-defined zipcode proxy, we are able to pool data from two main sources -- the US Census and Open ICPSR-- to encompass 4 major facets of urban life.
 
 
-## EDA 
+1. Our [first predictor set](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04)[^2] comes from the US Census, and provides a variety of information about housing characteristics including number of housing units in an area, rent prices, and indicators of development (phone reception, income to rent ratio, etc.). This is derived from the Census's ACS 5-year survey estimates for the year 2015. We use data from 2015 since that is also when the Gayborhood dataset was published.
+
+[^2]: US Census. (2021). *DP04: SELECTED HOUSING CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04. Accessed 24 April 2023.
+
+2. We also used US Census data to glean information about various demographic characteristics, as represented in [our second data section](https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05)[^3]. This set primarily synthesizes demographic information that is *not* specifically related to sexuality (i.e. the parameters that went into the calculation of our outcome variable), but describe other characteristics of each area.
+
+[^3]: US Census. (2015). *DP05: ACS DEMOGRAPHIC AND HOUSING ESTIMATES* [Data set]. data.census.gov. https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05. Accessed 26 April 2023.
+
+
+3. We also opted to include data from Open ICPSR, which included [information about parks](https://doi.org/10.3886/E119803V1)[^4] in each geographical region, including number of open parks and proportion of ZCTA area that is park space. Since parks are public areas, they serve as a predictive metric for the culture of a community, and are thus important in describing neighborhood lifestyle.
+
+[^4]: Li, Mao, Melendez, Robert, Khan, Anam, Gomez-Lopez, Iris, Clarke, Philippa, and Chenoweth, Megan. (2020). *National Neighborhood Data Archive (NaNDA): Parks by ZIP Code Tabulation Area, United States, 2018*. Ann Arbor, MI: Inter-university Consortium for Political and Social Research. https://doi.org/10.3886/E119803V1. Accessed 23 April 2023
+
+4. Finally, we included data concerning the primary method of [transport to work](https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802)[^5], also from the US Census ACS survey. This will round out our predictors by describing the movement, as well as the physical locale, within a neighborhood.
+
+[^5]: US Census. (2015). *S0802: MEANS OF TRANSPORTATION TO WORK BY SELECTED CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802. Accessed 30 April 2023.
+
+These yields a functional dataset with > 550 predictors, which fall into the above categories. A skim of the first 10 variables is provided below:
+
+```{r}
+combined_datasets %>% 
+  select(1:12) %>% 
+  skimr::skim_without_charts()
+```
+
+
+### Issues and Challenges
+Collecting and cleaning the data was fairly easy. The census data is well organized, and generally has low missingness, which allowed us to only throw out a few potential predictors and will allow us to impute the rest. For cleaning of census data, we also removed columns that contained margins of error and annotations rather than the actual variables. The parks data required the removal of some text form within the data columns and conversion to numeric format. After cleaning individually, all datasets were then combined into a single dataset.
+
+One main concern with our data is the ratio of observations to predictors, since the ratio is currently ~ 1:4. Because of this, most of our feature engineering will rely on targeted dimensionality reduction in order to explain the variance captured in these variables without overfitting to prediction variables.
+
+Because census predictors were numerous, any variables with greater than 10% missing were removed. The remaining missing values are summarized in the table below, with higher missingness listed first. The missingness in these variables are assumed to be randomly missing since they were collected and reported in the US Census ACS survey:
+
+```{r}
+#| label: lay-your-predictors-on-me
+
+naniar::miss_var_summary(combined_datasets) %>% 
+  DT::datatable()
+```
+
+
+## Exploratory Data Analysis
+
+### Outcome Variable Transformation
+
+The purpose of this regression problem is to accurately predict the outcome variable of interest, `y`. Based on the visualization below, a transformation should be applied to the outcome variable as it has a right skew, which will hinder the modeling process. Additionally, notice that the boxplot denotes many outliers within the data, which will lead to poor fits for certain models. This report hopes to apply a transformation such that the transformed `y` will appear to have data generated from a normal distribution.
+
+```{r}
+#| label: not-transformed-outcome
+
+outcome <- outcome %>% 
+  mutate(y = VGAM::yeo.johnson(outcome$gayborhood_index, lambda = -0.268, inverse = TRUE))
+
+p1 <- ggplot(outcome, aes(y)) +
+  geom_boxplot() +
+  theme_void()
+
+p2 <- ggplot(outcome, aes(y)) +
+  geom_density(fill = "rosybrown1") +
+  labs(
+    x = "Gayborhood Index",
+    y = "Density"
+  ) +
+  theme_minimal()
+
+p1 / p2 +
+  plot_layout(heights = c(1, 5)) +
+  plot_annotation(
+    title = "Distribution of Outcome Variable"
+  )
+```
+
+We originally planned to apply a log10 transformation to our outcome variable, an index measuring how queer a ZCTA region was based on parameters defined in this dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1]. However, the appearance of success from the log transformation was based off removal of 0 values, which are undefined (mapped to negative infinity in R). Examining the original data more closely, we find the following observations:
+
+- Calculations for `totindex` (the index measure) are not easily decipherable, and for a few ZCTAs, seem to be wrong entirely
+-  There exist 0 values when some of the key queerness measures (e.g. number of same sex couples joint filing taxes) are positive
+- Some zipcodes that are included in the data have no documented inhabitants (like [20535](https://www.google.com/maps/place/Washington,+DC+20535/@38.8971027,-77.0171132,17.74z/data=!4m6!3m5!1s0x89b7b79a7c49ec35:0xd126c581ac37d987!8m2!3d38.8951008!4d-77.0251409!16s%2Fm%2F07nrg5b) and [94128](https://www.google.com/maps/place/San+Francisco,+CA+94128/@37.6264524,-122.3795119,14z/data=!3m1!4b1!4m6!3m5!1s0x808f778dc64c23fb:0x4e9b9d32ba01bb94!8m2!3d37.6239079!4d-122.3815924!16s%2Fm%2F01zncnw))
+
+In attempts to remedy these issues, we first dropped any zipcodes with $<100$ inhabitants, and then recalculated our outcome variable, based on the following formula:
+
+$$gayborhood\_index = 40*ss\_tax\_index + 40*ss\_live\_index + 10*parade + 10*bars$$
+where 
+
+- $ss\_tax\_index$ is a measure of what percent of couples filing jointly are same sex couples (normalized by the maximum value, on a 0 to 1 scale)
+- $ss\_live\_index$ is a measure of what percent of unmarried couples living together are same sex couples (normalized by the maximum value, on a 0 to 1 scale)
+- $parade$ is an indicator variable indicating if a pride parade passes through that zipcode (0 or 1)
+- $bars$ is a measure of how many gay bars there are in that area (normalized by the maximum value, 20, on a 0 to 1 scale)
+
+This calculation accurately repurposes the original dataset for our use, which is not as concerned with splitting up men and women as was the original article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). 
+
+We then used a Yeo-Johnson transformation with $\lambda = -0.268$ (calculated by the applicable `step_YeoJohnson()`) to transform our data and improve normality. This transformation was chosen as it allows us to keep our 0 values, which have an important physical representation in this dataset, without greatly compromising normality:
+
+```{r}
+#| label: yeo-johnson-transform
+
+ggplot(outcome, aes(x = gayborhood_index)) +
+  geom_density(fill = "rosybrown1") +
+  labs(title = "Transformed Distribution",
+       x = "Recalculated Gayborhood Index (Yeo Johnson Transform)",
+       y = "Density") +
+  theme_minimal()
+```
+
+Now, although the the transformed outcome variable still does not appear to have been generated from a normal distribution, there are no outliers, which will improve model performance.
+
+### Predictor Variable Selection
+
+The provided data listed over 500 possible predictor variables. Fitting models to all potential predictor variables would not only be computationally expensive, but increase the variance of the predictions. Because of these issues, this report aims to mechanically select the most relevant predictors for the regression problem.
+
+In addition to the issue of having many possible predictors variables, there are varying degrees of missingness across the predictors, which is resolved by imputing the variables with values from a K-Nearest Neighbors model.
+
+Next, a LASSO model was fit to the training set to further narrow down the list of predictors. A lenient penalty of 0.01 was employed, along with recipe steps to remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
+
+### Feature Engineering
 
 did we just not have missingness?? i think there was some or else what are we imputing... lol.
 
-DEFINITELY talk about the yeo johnson transform or whatever we did there. that was tea .
+### Data Splitting and Folding
+For computational reasons, this project 
 
+## Modeling Process
 
-# overview of modeling process
+### Overview
 
 ```{r}
 #| label: mermaiddd
@@ -99,15 +214,14 @@ DiagrammeR::mermaid("
 ")
 ```
 
-
-## Initial modeling
+### Model Types
 
 we fit these model types:
 
 - Penalized Elastic Net Regression
     - with and without [partial least squares](https://en.wikipedia.org/wiki/Partial_least_squares_regression)
 
-- Random Forest + Boosted Tree (?)
+- Random Forest + Boosted Tree (XGBoost)
 
 - K-Nearest Neighbors
 
@@ -119,6 +233,7 @@ we fit these model types:
 
 - Cubist ensemble regression
 
+### Model Results
 
 Our results are that... neural networks flopped, whatever the rnoein cubist ensemble regression is did well:
 
@@ -126,9 +241,15 @@ Our results are that... neural networks flopped, whatever the rnoein cubist ense
 #| label: initial-comp-table
 
 initial_model_comparison %>%
-  gt::gt() %>%
-  gt::tab_header(title = "Initial Model Comparison") %>%
-  gt::tab_style(
+  transmute(
+    `Model Type`,
+    "Best Mean RMSE" = `Best mean RMSE`,
+    `Standard Error`,
+    "Optimal Hyperparameters" = `Hyperparameters used`
+  ) %>% 
+  gt() %>%
+  tab_header(title = "Initial Model Comparison") %>%
+  tab_style(
     style = list(
       cell_text(color = "black",
                 style = "oblique"),
@@ -136,20 +257,17 @@ initial_model_comparison %>%
     ),
     locations = cells_body(
       rows = c(1,2,3))
-  )
+  ) %>% 
+  gtExtras::gt_theme_538()
 
 ```
 
-
-
 ***WHATS THE SITCH WITH OTHER RECIPES?? DO WE WANT TO TRY THEM NOW??***
+probably not, we can say future research would include more recipe steps to test like splines (natural, b, whatever other step_spline stuff there is), PCA, etc.
 
-
-## Model selection 
+### Ensemble Model
 
 we picked the three best ones
-
-## ensemble modeling
 
 yay for stacks. we might actually want to try [baguette](https://baguette.tidymodels.org/index.html) instead, i feel like it slays, but i didnt do the reading so i owuldnt know.
 
@@ -157,4 +275,3 @@ yay for stacks. we might actually want to try [baguette](https://baguette.tidymo
 ## final results
 
 happy pride <3 such a well timed project tbh
-
