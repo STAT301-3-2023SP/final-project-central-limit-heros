@@ -88,7 +88,7 @@ Because this project is based primarily on data by ZCTA, a US Census-defined zip
 
 [^5]: US Census. (2015). *S0802: MEANS OF TRANSPORTATION TO WORK BY SELECTED CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802. Accessed 30 April 2023.
 
-These yield a functional dataset with > 550 predictors, which fall into the above categories. A skim of the first 10 variables is provided below:
+These yield a functional dataset with $> 550$ predictors, which fall into the above categories. A skim of the first 10 variables is provided below:
 
 ```{r}
 combined_datasets %>% 
@@ -290,25 +290,35 @@ Our three best model types, cubist ensemble regression, elastic net regression, 
 # label: ensemble-results
 
 rmse_by_member %>% 
+  mutate(rmse = round(rmse, digits = 3)) %>% 
+  arrange(rmse) %>% 
   gt() %>% 
   tab_header(title = "Ensemble Results") %>%
   cols_label(
     model_name = "Model Name",
     rmse = "RMSE"
   ) %>% 
-  gtExtras::gt_theme_538()
+  cols_width(everything() ~ px(150)) %>% 
+  gtExtras::gt_theme_538() %>% 
+  gtExtras::gt_highlight_rows(
+    rows = 3,
+    fill = "lightgrey",
+    bold_target_only = TRUE,
+    target_col = model_name
+    )
 ```
 
 ## Final Results
 The RMSE of the final ensemble model was 3.30. Interestingly, this is higher than two of the ensemble members (both cubist ensemble models). The concordance correlation coefficient (CCC) of the final ensemble was .714. 
 
 Here is a plot of predicted vs true values of the Gayborhood index:
+
 ```{r}
 # label: predicted-vs-truth
 ensemble_preds %>%
   ggplot(aes(x = true_gayborhood_index, y = predictions)) +
   geom_abline(slope = 1, color = "red", linetype = "dashed") +
-  geom_point() +
+  geom_point(alpha = 0.3) +
   coord_obs_pred() +
   theme_minimal() +
   labs(title = "True vs predicted values of Gayborhood index",
