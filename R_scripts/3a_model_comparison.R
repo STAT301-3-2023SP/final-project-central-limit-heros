@@ -75,16 +75,3 @@ initial_model_comparison <- map(models, shows_best) %>%
          "Hyperparameters used" = "hyperparameters") 
 
 save(initial_model_comparison, file = "results/initial_comp.rda")
-
-
-########################################################################################################
-# PREDICTION + ASSESSMENT: SHOULD PROBABLY BE MOVED TO SEPARATE FILE (?) ----
-########################################################################################################
-
-load("data/processed/test_data.rda")
-
-knn_preds <- predict(knn_final_model, new_data = test) %>% 
-  bind_cols(test %>% select(gayborhood_index)) # %>% 
-# metrics(truth = popularity, estimate = .pred)
-
-save(knn_preds, file = "results/predictions/knn_preds.rda")

@@ -61,3 +61,7 @@ save(model_stack_blended_5_fit, file = "results/model_fits/fit_stack_5.rda")
 
 # look at individs
 stacks::collect_parameters(model_stack_blended_5_fit, candidates = "cer_tuned")
+
+
+
+
