@@ -34,6 +34,9 @@ tidymodels_prefer()
 load("results/initial_comp.rda")
 load("data/processed/outcome_var.rda")
 load("data/processed/combined_datasets.rda")
+load("data/processed/lasso_dataset.rda")
+load("results/predictions/ensemble_preds.rda")
+load("results/predictions/metrics_by_member.rda")
 
 ```
 
@@ -85,7 +88,7 @@ Because this project is based primarily on data by ZCTA, a US Census-defined zip
 
 [^5]: US Census. (2015). *S0802: MEANS OF TRANSPORTATION TO WORK BY SELECTED CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802. Accessed 30 April 2023.
 
-These yields a functional dataset with > 550 predictors, which fall into the above categories. A skim of the first 10 variables is provided below:
+These yield a functional dataset with > 550 predictors, which fall into the above categories. A skim of the first 10 variables is provided below:
 
 ```{r}
 combined_datasets %>% 
@@ -99,15 +102,7 @@ Collecting and cleaning the data was fairly easy. The census data is well organi
 
 One main concern with our data is the ratio of observations to predictors, since the ratio is currently ~ 1:4. Because of this, most of our feature engineering will rely on targeted dimensionality reduction in order to explain the variance captured in these variables without overfitting to prediction variables.
 
-Because census predictors were numerous, any variables with greater than 10% missing were removed. The remaining missing values are summarized in the table below, with higher missingness listed first. The missingness in these variables are assumed to be randomly missing since they were collected and reported in the US Census ACS survey:
-
-```{r}
-#| label: lay-your-predictors-on-me
-
-naniar::miss_var_summary(combined_datasets) %>% 
-  DT::datatable()
-```
-
+Because census predictors were numerous, any variables with greater than 10% missing were removed. The missingness in these variables are assumed to be randomly missing since they were collected and reported in the US Census ACS survey.
 
 ## Exploratory Data Analysis
 
@@ -177,21 +172,37 @@ Now, although the the transformed outcome variable still does not appear to have
 
 The provided data listed over 500 possible predictor variables. Fitting models to all potential predictor variables would not only be computationally expensive, but increase the variance of the predictions. Because of these issues, this report aims to mechanically select the most relevant predictors for the regression problem.
 
-In addition to the issue of having many possible predictors variables, there are varying degrees of missingness across the predictors, which is resolved by imputing the variables with values from a K-Nearest Neighbors model.
-
-Next, a LASSO model was fit to the training set to further narrow down the list of predictors. A lenient penalty of 0.01 was employed, along with recipe steps to remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
+A lasso model was fit to the training set to further narrow down the list of predictors. A lenient penalty of 0.01 was employed, along with recipe steps to impute missing values with K-Nearest Neighbors and remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
 
 ### Feature Engineering
 
-did we just not have missingness?? i think there was some or else what are we imputing... lol.
+In addition to the issue of having many possible predictors variables, there are varying degrees of missingness across the predictors. Many of the variables with larger degrees of missingness were removed in the process of lasso selection, and the remaining variables had low missingness (under 2%). The remaining missing values are summarized in the table below, with higher missingness listed first.
+
+```{r}
+# label: missingness
+naniar::miss_var_summary(lasso_dataset) %>% 
+  DT::datatable()
+```
+
+The missingness for the rest of the models was also resolved by imputing the variables with values from a K-Nearest Neighbors model. 
+
+Our recipe was for relationships between the Gayborhood index and all of the remaining predictors after lasso selection. Additional feature engineering steps used on all of the models were removal of all near zero variance predictors (though that is probably redundant after lasso selection), updating the role of the ID column to ensure it is not used as a predictor, dummy encoding categorical predictors, and normalization of all predictors. The same recipe was used for all model types except for random forest, where dummy encoding was not used. Tree-based models can accept categorical variables and in many cases are faster when dummy encoding is not used. 
+
+We also fitted an elastic net model with partial least squares feature extraction, PLS (see more below). The recipe for this model included interaction terms between all predictors and a step for PLS. 
+
 
 ### Data Splitting and Folding
-For computational reasons, this project 
+We split the data into training and testing sets with a proportion of .8 training and .2 testing, stratified by the outcome variable. We chose this as it is the convention for datasets that are large enough that withholding data from the training set is not a concern. 
+
+We used v-fold cross validation to prevent overfitting to the training data. We used 5 folds with 3 repeats as opposed to larger numbers to reduce model runtimes.
 
 ## Modeling Process
 
 ### Overview
 
+Our modeling process began with importing data, conducting exploratory data analysis, and combining the datasets. We then conducted lasso variable selection, arriving at a final dataset with a smaller number of more useful predictors. We conducted relatively basic feature engineering. We then tuned and fit a number of different model types (see next section). We assessed the RMSE of each model type using the folds from cross-validation. We then chose the three best performing models to be incorporated into an ensemble model. Finally, the ensemble model was fit to the testing set to produce the final results. 
+
+Here is a flowchart outlining our modeling process:
 ```{r}
 #| label: mermaiddd
 
@@ -214,28 +225,36 @@ DiagrammeR::mermaid("
 ")
 ```
 
+
 ### Model Types
 
-we fit these model types:
+We fit the following model types:
 
 - Penalized Elastic Net Regression
     - with and without [partial least squares](https://en.wikipedia.org/wiki/Partial_least_squares_regression)
+    - `glmnet` engine
 
-- Random Forest + Boosted Tree (XGBoost)
+- Random Forest 
+    - `ranger` engine
+
+- Boosted Tree
+    - `xgboost` engine
 
 - K-Nearest Neighbors
+    - `kknn` engine
 
 - Neural Networks 
-  - Basic neural networks using `nnet` in R
   - Using `keras` and [Tensorflow](https://www.tensorflow.org/) from python through R
   
-- Multivariate Adaptive Regression Splines
+- Multivariate Adaptive Regression Splines (MARS)
+    - `earth` engine
 
 - Cubist ensemble regression
+    - `cubist` engine
 
 ### Model Results
 
-Our results are that... neural networks flopped, whatever the rnoein cubist ensemble regression is did well:
+We found that the Cubist ensemble performed the best, with a mean RMSE of .328. Elastic net regression (without PLS) and random forest were also in the top 3 models, all with RMSEs under .34. K-nearest neighbors and boosteed performed almost as well, both under .35. There is then a significant gap to the worse models, those being elastic net with PLS, multivariate adapative regression splines, and neural networks with keras. 
 
 ```{r}
 #| label: initial-comp-table
@@ -262,16 +281,45 @@ initial_model_comparison %>%
 
 ```
 
-***WHATS THE SITCH WITH OTHER RECIPES?? DO WE WANT TO TRY THEM NOW??***
-probably not, we can say future research would include more recipe steps to test like splines (natural, b, whatever other step_spline stuff there is), PCA, etc.
 
 ### Ensemble Model
 
-we picked the three best ones
+Our three best model types, cubist ensemble regression, elastic net regression, and random forest, were combined in an ensemble model with `stacks`. The final ensemble kept 6 configurations of cubist ensemble, 2 configurations of elastic net, and 2 configurations of random forest. Here is a table of the individual model performances:
 
-yay for stacks. we might actually want to try [baguette](https://baguette.tidymodels.org/index.html) instead, i feel like it slays, but i didnt do the reading so i owuldnt know.
+```{r}
+# label: ensemble-results
 
+rmse_by_member %>% 
+  gt() %>% 
+  tab_header(title = "Ensemble Results") %>%
+  cols_label(
+    model_name = "Model Name",
+    rmse = "RMSE"
+  ) %>% 
+  gtExtras::gt_theme_538()
+```
 
-## final results
+## Final Results
+The RMSE of the final ensemble model was 3.30. Interestingly, this is higher than two of the ensemble members (both cubist ensemble models). The concordance correlation coefficient (CCC) of the final ensemble was .714. 
+
+Here is a plot of predicted vs true values of the Gayborhood index:
+```{r}
+# label: predicted-vs-truth
+ensemble_preds %>%
+  ggplot(aes(x = true_gayborhood_index, y = predictions)) +
+  geom_abline(slope = 1, color = "red", linetype = "dashed") +
+  geom_point() +
+  coord_obs_pred() +
+  theme_minimal() +
+  labs(title = "True vs predicted values of Gayborhood index",
+       x = "True Gayborhood index",
+       y = "Predicted Gayborhood index")
+```
+
 
 happy pride <3 such a well timed project tbh
+
+### Future Directions
+we can say future research would include more recipe steps to test like splines (natural, b, whatever other step_spline stuff there is), PCA, etc.
+
+we might actually want to try [baguette](https://baguette.tidymodels.org/index.html) instead, i feel like it slays, but i didnt do the reading so i owuldnt know.

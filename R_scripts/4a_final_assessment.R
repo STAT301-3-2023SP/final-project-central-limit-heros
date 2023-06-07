@@ -2,10 +2,17 @@
 # PREDICTION + ASSESSMENT ----
 ########################################################################################################
 
-# our winning model fit was our 3 member ensemble, so we'll use that to get stuff out
+##load packages ----
+library(tidyverse)
+library(tidymodels)
 
+# handle common conflicts
+tidymodels_prefer()
+
+## load model results
 load("data/processed/test_data_lasso.rda")
 load("results/model_fits/fit_stack.rda")
+# our winning model fit was our 3 member ensemble, so we'll use that to get stuff out
 
 ensemble_preds <- test %>%
   bind_cols(predict(model_stack_blended_fit, .)) %>%
@@ -21,6 +28,7 @@ ensemble_preds <- test %>%
 # Save predictions
 
 save(ensemble_preds, file = "results/predictions/ensemble_preds.rda")
+#load("results/predictions/ensemble_preds.rda")
 
 
 ensemble_preds %>% 
@@ -73,3 +81,4 @@ ccc_by_member <- map(member_preds, ccc_vec, truth = member_preds$gayborhood_inde
          "ccc" = "value")
 
 save(ccc_by_member, rmse_by_member, file = "results/predictions/metrics_by_member.rda")
+#load("results/predictions/metrics_by_member.rda")
