@@ -5,12 +5,13 @@ author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
 date: today
 format: 
   html:
+    theme: custom.scss
     embed-resources: true
     toc: true
     link-external-newwindow: true
     df-print: paged
     footnotes-hover: true
-title-block-banner: images/pride-geotag.png
+title-block-banner: images/pride_banner22.png
 title-block-banner-color: black
 execute:
   echo: false
