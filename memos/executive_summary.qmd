@@ -1,0 +1,93 @@
+---
+title: "Queer Coded: Supervised ML to Predict LGBTQ+ Acceptance in American Neighborhoods"
+subtitle: "STAT 301-3 Data Science 3 with R - Executive Summary"
+author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
+date: today
+format: 
+  html:
+    embed-resources: true
+    toc: true
+    link-external-newwindow: true
+    df-print: paged
+    footnotes-hover: true
+title-block-banner: images/pride_banner22.png
+title-block-banner-color: black
+execute:
+  echo: false
+  warning: false
+from: markdown+emoji
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+#label: packages+data
+
+library(tidyverse)
+library(tidymodels)
+tidymodels_prefer()
+library(gt)
+
+load("results/predictions/metrics_by_member.rda")
+load("results/predictions/ensemble_preds.rda")
+```
+
+
+::: {.callout-tip icon="false"}
+## Github Repo Link
+
+<https://github.com/STAT301-3-2023SP/final-project-central-limit-heros>
+:::
+
+Nieghborhoods with a high queer population, which are centers of queer culture, are known as Gayborhoods. Knowing whether an area is suitable for queer people is an important sociological metric. We built a location-based regression model to predict the degree to which a neighborhood is a Gayborhood based on non-queer demographic data.
+
+Our outcome variable is an index (the "Gayborhood index") from a dataset published on data world. This index is a holistic assessment of a neighborhood's queerness, based on a number of factors such as number of same sex households, number of gay bars, and pride parade routes. This index is assigned by zip code. Our predictors came from a US Census dataset about housing characteristics, a Census dataset on demographic information not related to sexuality, a dataset on the amount of park space per zip code, and a Census dataset on transport to work.
+
+The initial phase of the modeling process consisted of exploring the data, joining and cleaning it. Due to strong skew, we transformed the outcome variable using the Yeo-Johnson transformation. We then ran a lasso model with a penalty of .01 to select the most relevant predictor variables, resulting in about 100 predictors used out of a total of over 550. We tuned and fitted a penalized elastic net regression model (with and without partial least squares), random forest, boosted tree, k-nearest neighbors, neural networks, multivariate adaptive regression splines, and cubist ensemble regression. The feature engineering consisted of imputation of missing values using KNN, removal of near zero variance predictors, dummy encoding categorical predictors (except for random forest), and normalization of all predictors. 
+
+Our data was split into 80/20 training/testing sets, and we used 5-fold cross validation with 3 repeats when tuning and our models. Using RMSE as a metric, we found cubist ensemble regression, elastic net regression, and random forest to be the three best performing models. As our final step, we joined the three best performing models into an ensemble. 
+
+::: {.grid}
+
+::: {.g-col-4}
+```{r}
+rmse_by_member %>% 
+  mutate(rmse = round(rmse, digits = 3)) %>% 
+  arrange(rmse) %>% 
+  gt() %>% 
+  tab_header(title = "Ensemble Results") %>%
+  cols_label(
+    model_name = "Model Name",
+    rmse = "RMSE"
+  ) %>% 
+  cols_width(everything() ~ px(110)) %>% 
+  gtExtras::gt_theme_538() %>% 
+  gtExtras::gt_highlight_rows(
+    rows = 3,
+    fill = "lightgrey",
+    bold_target_only = TRUE,
+    target_col = model_name
+    ) %>% 
+  tab_options(table.font.size = 12)
+```
+
+:::
+
+::: {.g-col-8}
+```{r}
+ensemble_preds %>%
+  ggplot(aes(x = true_gayborhood_index, y = predictions)) +
+  geom_abline(slope = 1, color = "red", linetype = "dashed") +
+  geom_point(alpha = 0.3) +
+  coord_obs_pred() +
+  theme_minimal() +
+  labs(title = "True vs predicted values of Gayborhood index",
+       x = "True Gayborhood index",
+       y = "Predicted Gayborhood index")
+```
+
+:::
+
+:::
+
+Conclusion to be added.
