@@ -47,7 +47,16 @@ save(model_stack_blended_5, file = "results/model_fits/blended_stack_5.rda")
 
 # Explore the blended model stack
 
-autoplot(model_stack_blended_5)
+p5 <- autoplot(model_stack_blended_5) +
+  labs(title = "5 Input Model Types") +
+  theme_minimal()
+
+p1 <- autoplot(model_stack_blended) +
+  labs(title = "3 Input Model Types") +
+  theme_minimal()
+
+p1 + p5
+
 autoplot(model_stack_blended_5, type = "members") +
   geom_line()
 

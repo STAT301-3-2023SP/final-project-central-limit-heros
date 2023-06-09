@@ -36,6 +36,7 @@ load("results/initial_comp.rda")
 load("data/processed/outcome_var.rda")
 load("data/processed/combined_datasets.rda")
 load("data/processed/lasso_dataset.rda")
+load("data/processed/time_data.rda")
 load("results/predictions/ensemble_preds.rda")
 load("results/predictions/metrics_by_member.rda")
 
@@ -50,9 +51,37 @@ load("results/predictions/metrics_by_member.rda")
 :::
 
 
-### Introduction
+## Introduction
 
 Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipedia.org/wiki/Gay_village), have been urban areas in which LGBTQ+ people have found community and built culture worldwide. However, these geographic areas serve as much more than the sexuality of their constituents, and have been cited as yielding robust creative economies, as well as a welcoming environment for those of many identities. Knowing this, the identity of a certain locale as a Gayborhood becomes a crucial sociological metric, with neighborhoods with a more prevalent queer identity driving social liberalism in the face of prejudice. Our analysis thus focuses on building a **location-based regression model** that uses a variety of parameters including housing, land use, and non-queer demographic data **to predict Gayborhood degree**, and, in so doing, determine whether an area is suitable for queer folks with the goal of advancing understanding of liberal areas.
+
+### Workflow Overview
+
+Our initial modeling process consisted of initial data collection (@sec-COLLECT), exploratory analysis and feature engineering (@sec-FE), and modeling with v-fold cross validation (@sec-IM). This was followed by creation of an intelligent ensemble model (@sec-ENS) and subsequent assessment of our ensemble on data that was withheld from our training set (@sec-FINAL). We assessed models mostly based on *root mean sqared error*, or RMSE, as this is a common and sensical metric for regression. However, we also include the *concordance correlation coefficient*, or CCC, to assess the amount of variation in our outcome variable captured by our model. This process is represented below, in figure 1: 
+
+```{r}
+#| label: mermaiddd
+#| fig-cap: Diagram of the initial modeling process
+
+DiagrammeR::mermaid("
+  graph LR
+    A[Housing Data] --> D(Feature Engineering)
+    K[Park Data]-->D(Feature Engineering)
+    B[Demographic Data]-->D
+    C[Commuter Data]-->D
+    D-->E(Initial Modeling)
+    E-->F[Model Selection]
+    E-->F
+    E-->F
+    E-->F
+    E-->F
+    E-->F
+    F-->G[Ensemble Fitting]
+    F-->G
+    F-->G
+    G-->H(Model Assessment)
+")
+```
 
 ### Outcome Variable
 
@@ -67,7 +96,7 @@ In order to rank Gayborhood status, we are using a published dataset [from data 
 
 In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. In @sec-EDA, we will discuss our measures to reprocess the outcome variable.
 
-## Data collection
+## Data collection {#sec-COLLECT}
 
 Because this project is based primarily on data by ZCTA, a US Census-defined zipcode proxy, we are able to pool data from two main sources -- the US Census and Open ICPSR-- to encompass 4 major facets of urban life.
 
@@ -103,13 +132,13 @@ Collecting and cleaning the data was fairly easy. The census data is well organi
 
 One main concern with our data is the ratio of observations to predictors, since the ratio is currently ~ 1:4. Because of this, most of our feature engineering will rely on targeted dimensionality reduction in order to explain the variance captured in these variables without overfitting to prediction variables.
 
-Because census predictors were numerous, any variables with greater than 10% missing were removed. The missingness in these variables are assumed to be randomly missing since they were collected and reported in the US Census ACS survey.
+Because census predictors were numerous, any variables with greater than 10% missing were removed. The missingness in any remaining variables is assumed to be random since these parameters were collected and reported in the US Census ACS survey.
 
 ## Exploratory Data Analysis {#sec-EDA}
 
 ### Outcome Variable Transformation
 
-The purpose of this regression problem is to accurately predict the outcome variable of interest, `y`. Based on the visualization below, a transformation should be applied to the outcome variable as it has a right skew, which will hinder the modeling process. Additionally, notice that the boxplot denotes many outliers within the data, which will lead to poor fits for certain models. This report hopes to apply a transformation such that the transformed `y` will appear to have data generated from a normal distribution.
+To begin our exploratory analysis, we assessed methods for transformation of our outcome variable, an index measuring how queer a ZCTA region was based on parameters defined in this dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1]. Based on the visualization below, a transformation should be applied to the outcome variable as it has a right skew, which will hinder the modeling process. Additionally, notice that the boxplot denotes many outliers within the data, which will lead to poor fits for models that can only generalize to common data. This report hopes to reframe this index so our measure will appear to have data generated from a normal distribution.
 
 ```{r}
 #| label: not-transformed-outcome
@@ -136,7 +165,7 @@ p1 / p2 +
   )
 ```
 
-We originally planned to apply a log10 transformation to our outcome variable, an index measuring how queer a ZCTA region was based on parameters defined in this dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1]. However, the appearance of success from the log transformation was based off removal of 0 values, which are undefined (mapped to negative infinity in R). Examining the original data more closely, we find the following observations:
+We originally planned to apply a log10 transformation to our outcome variable. However, the appearance of success from the log transformation was based off removal of 0 values, which are undefined (mapped to negative infinity). Examining the original data more closely, we find the following observations:
 
 - Calculations for `totindex` (the index measure) are not easily decipherable, and for a few ZCTAs, seem to be wrong entirely
 -  There exist 0 values when some of the key queerness measures (e.g. number of same sex couples joint filing taxes) are positive
@@ -152,9 +181,9 @@ where
 - $parade$ is an indicator variable indicating if a pride parade passes through that zipcode (0 or 1)
 - $bars$ is a measure of how many gay bars there are in that area (normalized by the maximum value, 20, on a 0 to 1 scale)
 
-This calculation accurately repurposes the original dataset for our use, which is not as concerned with splitting up men and women as was the original article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). 
+This calculation accurately repurposes the original dataset for our use, which is not as concerned with queer identity across gender identities as was the original article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). 
 
-We then used a Yeo-Johnson transformation with $\lambda = -0.268$ (calculated by the applicable `step_YeoJohnson()`) to transform our data and improve normality. This transformation was chosen as it allows us to keep our 0 values, which have an important physical representation in this dataset, without greatly compromising normality:
+We then used a Yeo-Johnson transformation with $\lambda = -0.268$ (optimized by the applicable `step_YeoJohnson()` in `tidymodels`) to transform our data and improve normality. This transformation was chosen as it allows us to keep our 0 values, which have an important physical representation in this dataset, without greatly compromising normality:
 
 ```{r}
 #| label: yeo-johnson-transform
@@ -173,63 +202,46 @@ Now, although the the transformed outcome variable still does not appear to have
 
 The provided data listed over 500 possible predictor variables. Fitting models to all potential predictor variables would not only be computationally expensive, but increase the variance of the predictions. Because of these issues, this report aims to mechanically select the most relevant predictors for the regression problem.
 
-A lasso model was fit to the training set to further narrow down the list of predictors. A lenient penalty of 0.01 was employed, along with recipe steps to impute missing values with K-Nearest Neighbors and remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
+A LASSO model was fit to the training set to further narrow down the list of predictors by penalizing the addition of terms to a regression model. A lenient penalty of 0.01 was employed, along with steps to impute missing values with K-Nearest Neighbors and remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
 
-### Feature Engineering
+### Feature Engineering {#sec-FE}
 
-In addition to the issue of having many possible predictors variables, there are varying degrees of missingness across the predictors. Many of the variables with larger degrees of missingness were removed in the process of lasso selection, and the remaining variables had low missingness (under 2%). The remaining missing values are summarized in the table below, with higher missingness listed first.
+In addition to the issue of having many possible predictor variables, there are varying degrees of missingness across the predictors. Many of the variables with larger degrees of missingness were removed in the process of lasso selection, and the remaining variables had low missingness (under 2%). The remaining missing values are summarized in the table below, with higher missingness listed first.
 
 ```{r}
 #| label: missingness
 naniar::miss_var_summary(lasso_dataset) %>% 
+  filter(pct_miss > 0) %>%
   DT::datatable()
 ```
 
 The missingness for the rest of the models was also resolved by imputing the variables with values from a K-Nearest Neighbors model. 
 
-Our recipe was for relationships between the Gayborhood index and all of the remaining predictors after lasso selection. Additional feature engineering steps used on all of the models were removal of all near zero variance predictors (though that is probably redundant after lasso selection), updating the role of the ID column to ensure it is not used as a predictor, dummy encoding categorical predictors, and normalization of all predictors. The same recipe was used for all model types except for random forest, where dummy encoding was not used. Tree-based models can accept categorical variables and in many cases are faster when dummy encoding is not used. 
+Our model was based relationships between the Gayborhood index and all of the remaining predictors after lasso selection. Additional feature engineering steps include the following:
 
-We also fitted an elastic net model with partial least squares feature extraction, PLS (see more below). The recipe for this model included interaction terms between all predictors and a step for PLS. 
+- removal of all near zero variance predictors (though this is ideally redundant after lasso selection)
+- updating the role of the ID column to ensure it is not used as a predictor, 
+- dummy encoding categorical predictors, 
+- normalization of all predictors (centered and scaled to unit variance)
 
+::: {.callout-note icon="false"}
+Dummy encoding was ***NOT*** used for our random forest model. Tree-based models can decipher trends in categorical variables and in many cases are faster when dummy encoding is not used. 
+:::
+
+This feature engineering workflow was decided on after initial tinkering with the elastic net model as a base for understanding our data. In order to increase the amount of variation explained by this model, we included a version that included all pairwise interactions between the feature selected terms, and then proceeded to use partial least squares tuned to the outcome to reduce dimensionality. Number of components used in this model was tuned, yet it still performed worse than the base elastic net model, likely because the penalty term proxied for targeted dimensionality reduction.
 
 ### Data Splitting and Folding
-We split the data into training and testing sets with a proportion of .8 training and .2 testing, stratified by the outcome variable. We chose this as it is the convention for datasets that are large enough that withholding data from the training set is not a concern. 
+We split the data into training and testing sets with a proportion of *80% training and 20% testing*, stratified by the outcome variable with 4 bins. We chose this as it is the convention for datasets that are large enough that withholding data from the training set is not a concern. 
 
-We used v-fold cross validation to prevent overfitting to the training data. We used 5 folds with 3 repeats as opposed to larger numbers to reduce model runtimes.
+We used *v-fold cross validation* to tune hyperparameters while preventing overfitting to the training data. We used 5 folds with 3 repeats as opposed to larger numbers to reduce model runtimes.
 
-## Modeling Process
+## Modeling Process 
 
-### Overview
+Our initial modeling process began with fitting our data to a variety of different supervised ML model types, in order to determine which one would best be able to predict new data. For these model types (with the exception of neural networks), bayesian iteration was performed to optimize hyperparameter combinations by testing new values against prior expectations generated by an initial grid tune.
 
-Our modeling process began with importing data, conducting exploratory data analysis, and combining the datasets. We then conducted lasso variable selection, arriving at a final dataset with a smaller number of more useful predictors. We conducted relatively basic feature engineering. We then tuned and fit a number of different model types (see next section). We assessed the RMSE of each model type using the folds from cross-validation. We then chose the three best performing models to be incorporated into an ensemble model. Finally, the ensemble model was fit to the testing set to produce the final results. 
+### Initial Model Types {#sec-IM}
 
-Here is a flowchart outlining our modeling process:
-```{r}
-#| label: mermaiddd
-
-DiagrammeR::mermaid("
-  graph LR
-    A[Tree Data]-->D(Feature Engineering)
-    B[Census Data]-->D
-    C[Bike Data]-->D
-    D-->E(Initial Modeling)
-    E-->F[Model Selection]
-    E-->F
-    E-->F
-    E-->F
-    E-->F
-    E-->F
-    F-->G[Ensemble Fitting]
-    F-->G
-    F-->G
-    G-->H(Model Assessment)
-")
-```
-
-
-### Model Types
-
-We fit the following model types:
+The following model types were used for inital analysis:
 
 - Penalized Elastic Net Regression
     - with and without [partial least squares](https://en.wikipedia.org/wiki/Partial_least_squares_regression)
@@ -246,19 +258,21 @@ We fit the following model types:
 
 - Neural Networks 
   - Using `keras` and [Tensorflow](https://www.tensorflow.org/) from python through R
+  - Using `nnet` in R
   
 - Multivariate Adaptive Regression Splines (MARS)
     - `earth` engine
 
 - Cubist ensemble regression
-    - `cubist` engine
+    - `cubist` engine 
 
 ### Model Results
 
-We found that the Cubist ensemble performed the best, with a mean RMSE of .328. Elastic net regression (without PLS) and random forest were also in the top 3 models, all with RMSEs under .34. K-nearest neighbors and boosteed performed almost as well, both under .35. There is then a significant gap to the worse models, those being elastic net with PLS, multivariate adapative regression splines, and neural networks with keras. 
+Based on resample cross validation, intial results showed that the cubist ensemble model performed the best, with a mean RMSE of .328. Elastic net regression (without PLS) and random forest were also in the top 3 models, all with RMSEs under .34. K-nearest neighbors and boosted trees performed almost as well, both under .35. There is then a significant gap to the worse models, those being elastic net with PLS, multivariate adapative regression splines, and neural networks with keras. This is summarized in figure 2:
 
 ```{r}
 #| label: initial-comp-table
+#| fig-cap: Initial model results. RMSEs are averaged across folds, and hyperparameter combinations for each model with the lowest mean RMSE are shown.
 
 initial_model_comparison %>%
   transmute(
@@ -282,13 +296,71 @@ initial_model_comparison %>%
 
 ```
 
-
-### Ensemble Model
-
-Our three best model types, cubist ensemble regression, elastic net regression, and random forest, were combined in an ensemble model with `stacks`. The final ensemble kept 6 configurations of cubist ensemble, 2 configurations of elastic net, and 2 configurations of random forest. Here is a table of the individual model performances:
+In order to gauge the computational efficiency of these calculations, we also display the amount of time it took to fit each of these model types, both as time per model in the inital tune (in miliseconds), and time per iteration of bayesian optimization (in seconds):
 
 ```{r}
-# label: ensemble-results
+#| label: yeah-time-data-yeah
+#| fig-cap: Initial model time results. Time per model accounts for number of hyperparameter combinations, number of folds, and number of repeats. Models were trained using 5-8 threads, except for keras models, which were trained in series.
+
+time_data %>%
+  arrange(avg_time_per_model_ms) %>%
+  mutate(avg_time_per_model_ms = round(avg_time_per_model_ms, digits = 2),
+         bayesian_per_iter = round(bayesian_per_iter, 2)) %>%
+  transmute(
+     "Model Type"= `model`,
+    "Average Time per Model (ms)" = `avg_time_per_model_ms`,
+    "Time per Bayesian Iteration (s)" = `bayesian_per_iter`
+  ) %>% 
+  gt() %>%
+  tab_header(title = "Initial Model Comparison") %>%
+  tab_style(
+    style = list(
+      cell_text(color = "black",
+                style = "oblique"),
+      cell_fill(color = "darkseagreen2")
+    ),
+    locations = cells_body(
+      rows = 1)
+  ) %>% 
+  tab_style(
+    style = list(
+      cell_text(color = "black",
+                style = "oblique"),
+      cell_fill(color = "#FA2A55")
+    ),
+    locations = cells_body(
+      rows = c(8,9))
+  ) %>% 
+  gtExtras::gt_theme_538()
+```
+
+Unsurprisingly, elastic net models fit the quickest to our data. It is important to note here that parallel processing was not possible for the neural network case, which partially explains their much higher values. Here, it is also important to note that cubist ensemble regression, which had the lowest RMSE, did take longer than most of our other models. It is still within a reasonable range for this set, but in similar studies elastic net could be a more computationally efficient choice.
+
+### Ensemble Model {#sec-ENS}
+
+Initially, our plan was to fit an ensemble model that combined the top 3 performing initial models, which were:
+
+- cubist ensemble regression
+- elastic net regression (no interaction/PLS)
+- random forest
+
+A peek at the initial contributors revealed that 6 configurations were cubist ensemble models, 2 configurations were elastic net, and 2 configurations were random forest. However, we note that Figure 2 highlights RMSE values for K-nearest neighbors and Boosted trees that were very similar to our selected three. For this reason, we also fit an ensemble model with all 5 of these model types as inputs. Initial results from these two fits are displayed below:
+
+![](images/stack_number_comparison.png)
+```{r}
+#| label: needed-fig-caption
+#| fig-cap: Comparison of different Ensemble model options. 3 inputs maximizes RMSE.
+```
+
+Here, the 3 input model was seen to have a lower RMSE at the chosen number of members, and because this is also the simplest (and therefore least likely to overfit) model, we proceed with it as our final model. 
+
+## Final Results {#sec-FINAL}
+
+Fitting our final ensemble model to the testing data, we find the root mean squared error of predictions was ***3.30***, and the concordance correlation coefficient was ***.714***. This thus a valuable model for predicting queer acceptance in areas based on the way life is organized in those locations. Interestingly, this RMSE is *higher* than two of the ensemble members (both cubist ensemble models) individually, as shown in figure 6:
+
+```{r}
+#| label: ensemble-results
+#| fig-cap: Ensemble results by member. Ensemble refers to the entire ensemble performance.
 
 rmse_by_member %>% 
   mutate(rmse = round(rmse, digits = 3)) %>% 
@@ -309,8 +381,6 @@ rmse_by_member %>%
     )
 ```
 
-## Final Results
-The RMSE of the final ensemble model was 3.30. Interestingly, this is higher than two of the ensemble members (both cubist ensemble models). The concordance correlation coefficient (CCC) of the final ensemble was .714. 
 
 Here is a plot of predicted vs true values of the Gayborhood index:
 
@@ -332,5 +402,3 @@ happy pride <3 such a well timed project tbh
 
 ### Future Directions
 we can say future research would include more recipe steps to test like splines (natural, b, whatever other step_spline stuff there is), PCA, etc.
-
-we might actually want to try [baguette](https://baguette.tidymodels.org/index.html) instead, i feel like it slays, but i didnt do the reading so i owuldnt know.

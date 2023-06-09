@@ -75,3 +75,52 @@ initial_model_comparison <- map(models, shows_best) %>%
          "Hyperparameters used" = "hyperparameters") 
 
 save(initial_model_comparison, file = "results/initial_comp.rda")
+
+
+
+# HOW WERE TIMES?
+
+model_times <- list.files(path = "results/model_times", pattern = "*.rda", full.names = T) 
+
+# load time files
+for (i in seq_along(model_times)) {
+  load(file = model_times[i])
+}
+
+time_objects <- objects(pattern = "time_data$")
+
+get_time_info <- function(time_str) {
+  
+  time <- eval(expr(!!sym(time_str)))
+  time
+}
+
+# rename some things... whoops 
+
+cer_time_data <- cer_time_data %>%
+  mutate(model = "Cubist Ensemble Regression")
+
+en_pca_time_data <- en_pca_time_data %>%
+  mutate(model = "Elastic Net (PLS + interactions)")
+
+mlp_time_data <- mlp_time_data %>%
+  mutate(model = "Neural Network (Keras)")
+
+rf_time_data <- rf_time_data %>%
+  mutate(model = "Random Forest")
+
+nnet_time_data <- nnet_time_data %>%
+  mutate(model = "Neural Network (nnet)")
+
+xgboost_time_data <- xgboost_time_data %>%
+  mutate(model = "Boosted Trees")
+
+
+
+# combine tibbles
+time_data <- map(time_objects, .f = get_time_info) %>%
+  list_rbind() %>%
+  select(!c(grid_length, folds, repeats, recipes)) 
+
+save(time_data, file = "data/processed/time_data.rda")
+
