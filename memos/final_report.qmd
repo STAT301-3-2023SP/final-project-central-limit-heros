@@ -58,7 +58,7 @@ Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipe
 
 ### Workflow Overview
 
-Our initial modeling process consisted of initial data collection (@sec-COLLECT), exploratory analysis and feature engineering (@sec-FE), and modeling with v-fold cross validation (@sec-IM). This was followed by creation of an intelligent ensemble model (@sec-ENS) and subsequent assessment of our ensemble on data that was withheld from our training set (@sec-FINAL). We assessed models mostly based on *root mean sqared error*, or RMSE, as this is a common and sensical metric for regression. However, we also include the *concordance correlation coefficient*, or CCC, to assess the amount of variation in our outcome variable captured by our model. This process is represented below, in figure 1: 
+Our initial modeling process consisted of initial data collection (@sec-COLLECT), exploratory analysis and feature engineering (@sec-FE), and modeling with v-fold cross validation (@sec-IM). This was followed by creation of an intelligent ensemble model (@sec-ENS) and subsequent assessment of our ensemble on data that was withheld from our training set (@sec-FINAL). We assessed models mostly based on *root mean squared error*, or RMSE, as this is a common and topical metric for regression. We'd like to penalize predicted values which largely deviate from actual values due to potential harmful consequences of incorrect predictions. However, we also include the *concordance correlation coefficient*, or CCC, to assess the amount of variation in our outcome variable captured by our model as opposed to the traditional $R^2$ since we'd like to know more about the fidelity of the model predictions to actual values. This process is represented below, in figure 1: 
 
 ```{r}
 #| label: mermaiddd
@@ -100,14 +100,14 @@ In this case, we will be training a regression model to predict Gayborhood index
 
 ## Data collection {#sec-COLLECT}
 
-Because this project is based primarily on data by ZCTA, a US Census-defined zipcode proxy, we are able to pool data from two main sources -- the US Census and Open ICPSR-- to encompass 4 major facets of urban life.
+Because this project is based primarily on data by ZCTA, a US Census-defined zip code proxy, we are able to pool data from two main sources -- the US Census and Open ICPSR-- to encompass 4 major facets of urban life.
 
 
-1. Our [first predictor set](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04)[^2] comes from the US Census, and provides a variety of information about housing characteristics including number of housing units in an area, rent prices, and indicators of development (phone reception, income to rent ratio, etc.). This is derived from the Census's ACS 5-year survey estimates for the year 2015. We use data from 2015 since that is also when the Gayborhood dataset was published.
+1. Our [first predictor set](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04)[^2] comes from the US Census, and provides a variety of information about housing characteristics including number of housing units in an area, rent prices, and indicators of development (phone reception, income to rent ratio, etc.). This is derived from the Census's ACS 5-year survey estimates for the year 2015. We use data from 2015 since that is also when the Gayborhood dataset was published. The data are relevant to our prediction problem of interest as housing characteristics may imply information about how affordable and lively local economies are, as urban areas tend to attract more LGBTQ+ identifying individuals.
 
 [^2]: US Census. (2021). *DP04: SELECTED HOUSING CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04. Accessed 24 April 2023.
 
-2. We also used US Census data to glean information about various demographic characteristics, as represented in [our second data section](https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05)[^3]. This set primarily synthesizes demographic information that is *not* specifically related to sexuality (i.e. the parameters that went into the calculation of our outcome variable), but describe other characteristics of each area.
+2. We also used US Census data to glean information about various demographic characteristics, as represented in [our second data section](https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05)[^3]. This set primarily synthesizes demographic information that is *not* specifically related to sexuality (i.e. the parameters that went into the calculation of our outcome variable), but describe other characteristics of each area. As mentioned before, having these data might reveal how welcoming a city is based on diversity, while avoiding issues of multicolinearity.
 
 [^3]: US Census. (2015). *DP05: ACS DEMOGRAPHIC AND HOUSING ESTIMATES* [Data set]. data.census.gov. https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05. Accessed 26 April 2023.
 
@@ -116,7 +116,7 @@ Because this project is based primarily on data by ZCTA, a US Census-defined zip
 
 [^4]: Li, Mao, Melendez, Robert, Khan, Anam, Gomez-Lopez, Iris, Clarke, Philippa, and Chenoweth, Megan. (2020). *National Neighborhood Data Archive (NaNDA): Parks by ZIP Code Tabulation Area, United States, 2018*. Ann Arbor, MI: Inter-university Consortium for Political and Social Research. https://doi.org/10.3886/E119803V1. Accessed 23 April 2023
 
-4. Finally, we included data concerning the primary method of [transport to work](https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802)[^5], also from the US Census ACS survey. This will round out our predictors by describing the movement, as well as the physical locale, within a neighborhood.
+4. Finally, we included data concerning the primary method of [transport to work](https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802)[^5], also from the US Census ACS survey. This will round out our predictors by describing the movement, as well as the physical locale, within a neighborhood, and may be useful to understand the structure of the area (urban/suburban/rural/other).
 
 [^5]: US Census. (2015). *S0802: MEANS OF TRANSPORTATION TO WORK BY SELECTED CHARACTERISTICS* [Data set]. data.census.gov. https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802. Accessed 30 April 2023.
 
@@ -131,15 +131,15 @@ These yield a functional dataset with $> 550$ predictors, which fall into the ab
 ### Issues and Challenges
 Collecting and cleaning the data was fairly easy. The census data is well organized, and generally has low missingness, which allowed us to only throw out a few potential predictors and will allow us to impute the rest. For cleaning of census data, we also removed columns that contained margins of error and annotations rather than the actual variables. The parks data required the removal of some text form within the data columns and conversion to numeric format. After cleaning individually, all datasets were then combined into a single dataset.
 
-One main concern with our data is the ratio of observations to predictors, since the ratio is currently ~ 1:4. Because of this, most of our feature engineering will rely on targeted dimensionality reduction in order to explain the variance captured in these variables without overfitting to prediction variables.
+One main concern with our data is the ratio of observations to predictors, since the ratio is currently ~ 4:1, which will drastically inflate the variance of predictions, counteracting our goal of accurately pinning down the index measure. Because of this undesirable ratio, most of our feature engineering efforts will rely on targeted dimensionality reduction in order to explain the variance captured in these variables without overfitting to the predictor variables.
 
-Because census predictors were numerous, any variables with greater than 10% missing were removed. The missingness in any remaining variables is assumed to be random since these parameters were collected and reported in the US Census ACS survey.
+Because census predictors were numerous, any variables with greater than 10% missing were removed. The missingness in any remaining variables is assumed to be missing completely at random (MCAR) since these parameters were collected and reported in the US Census ACS survey, which aims to report a nationally representative population.
 
 ## Exploratory Data Analysis {#sec-EDA}
 
 ### Outcome Variable Transformation
 
-To begin our exploratory analysis, we assessed methods for transformation of our outcome variable, an index measuring how queer a ZCTA region was based on parameters defined in this dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1]. Based on the visualization below, a transformation should be applied to the outcome variable as it has a right skew, which will hinder the modeling process. Additionally, notice that the boxplot denotes many outliers within the data, which will lead to poor fits for models that can only generalize to common data. This report hopes to reframe this index so our measure will appear to have data generated from a normal distribution.
+To begin our exploratory analysis, we assessed methods for transformation of our outcome variable, an index measuring how queer a ZCTA region was based on parameters defined in this dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1]. Based on the visualization below, a transformation should be applied to the outcome variable as it has a right skew, which will hinder the modeling process. Additionally, notice that the boxplot denotes many outliers within the data, which will lead to poor fits for models that can only generalize to common data. This report hopes to re-frame this index so our measure will appear to have data generated from a normal distribution.
 
 ```{r}
 #| label: not-transformed-outcome
@@ -167,20 +167,20 @@ p1 / p2 +
 ```
 *Figure 2: Examination of Outcome Variable Skewness.*
 
-We originally planned to apply a log10 transformation to our outcome variable. However, the appearance of success from the log transformation was based off removal of 0 values, which are undefined (mapped to negative infinity). Examining the original data more closely, we find the following observations:
+We originally planned to apply a log10 transformation to the outcome variable. However, the appearance of success from the log transformation was based off removal of 0 values, which are undefined (mapped to negative infinity). Examining the original data more closely, we find the following observations:
 
 - Calculations for `totindex` (the index measure) are not easily decipherable, and for a few ZCTAs, seem to be wrong entirely
 -  There exist 0 values when some of the key queerness measures (e.g. number of same sex couples joint filing taxes) are positive
-- Some zipcodes that are included in the data have no documented inhabitants (like [20535](https://www.google.com/maps/place/Washington,+DC+20535/@38.8971027,-77.0171132,17.74z/data=!4m6!3m5!1s0x89b7b79a7c49ec35:0xd126c581ac37d987!8m2!3d38.8951008!4d-77.0251409!16s%2Fm%2F07nrg5b) and [94128](https://www.google.com/maps/place/San+Francisco,+CA+94128/@37.6264524,-122.3795119,14z/data=!3m1!4b1!4m6!3m5!1s0x808f778dc64c23fb:0x4e9b9d32ba01bb94!8m2!3d37.6239079!4d-122.3815924!16s%2Fm%2F01zncnw))
+- Some zip codes that are included in the data have no documented inhabitants (like [20535](https://www.google.com/maps/place/Washington,+DC+20535/@38.8971027,-77.0171132,17.74z/data=!4m6!3m5!1s0x89b7b79a7c49ec35:0xd126c581ac37d987!8m2!3d38.8951008!4d-77.0251409!16s%2Fm%2F07nrg5b) and [94128](https://www.google.com/maps/place/San+Francisco,+CA+94128/@37.6264524,-122.3795119,14z/data=!3m1!4b1!4m6!3m5!1s0x808f778dc64c23fb:0x4e9b9d32ba01bb94!8m2!3d37.6239079!4d-122.3815924!16s%2Fm%2F01zncnw))
 
-In attempts to remedy these issues, we first dropped any zipcodes with $<100$ inhabitants, and then recalculated our outcome variable, based on the following formula:
+In attempts to remedy these issues, we first dropped any zip codes with $<100$ inhabitants, and then recalculated our outcome variable, based on the following formula:
 
 $$gayborhood\_index = 40*ss\_tax\_index + 40*ss\_live\_index + 10*parade + 10*bars$$
 where 
 
 - $ss\_tax\_index$ is a measure of what percent of couples filing jointly are same sex couples (normalized by the maximum value, on a 0 to 1 scale)
 - $ss\_live\_index$ is a measure of what percent of unmarried couples living together are same sex couples (normalized by the maximum value, on a 0 to 1 scale)
-- $parade$ is an indicator variable indicating if a pride parade passes through that zipcode (0 or 1)
+- $parade$ is an indicator variable indicating if a pride parade passes through that zip code (0 or 1)
 - $bars$ is a measure of how many gay bars there are in that area (normalized by the maximum value, 20, on a 0 to 1 scale)
 
 This calculation accurately repurposes the original dataset for our use, which is not as concerned with queer identity across gender identities as was the original article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). 
@@ -199,13 +199,13 @@ ggplot(outcome, aes(x = gayborhood_index)) +
 ```
 *Figure 3: Yeo-Johnson transform improves normality of target distribution.*
 
-Now, although the the transformed outcome variable still does not appear to have been generated from a normal distribution, there are no outliers, which will improve model performance.
+Now, the data appears to be generated from a normal distribution because of the bell-curve shape and the lack of outliers, which will improve model performance moving forward.
 
 ### Predictor Variable Selection
 
-The provided data listed over 500 possible predictor variables. Fitting models to all potential predictor variables would not only be computationally expensive, but increase the variance of the predictions. Because of these issues, this report aims to mechanically select the most relevant predictors for the regression problem.
+The provided data listed over 550 possible predictor variables. Fitting models to all potential predictor variables would not only be computationally expensive, but increase the variance of the predictions. Because of these issues, this report aims to mechanically select the most relevant predictors for the regression problem.
 
-A LASSO model was fit to the training set to further narrow down the list of predictors by penalizing the addition of terms to a regression model. A lenient penalty of 0.01 was employed, along with steps to impute missing values with K-Nearest Neighbors and remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
+A LASSO model was fit to the training set to further narrow down the list of predictors by penalizing the addition of terms to a regression model. A lenient penalty term of 0.01 was employed, along with steps to impute missing values with K-Nearest Neighbors and remove variables with near zero variance, which would have provided little help in the prediction problem. Ultimately, about 100 predictors remained to be used in the model fitting process.
 
 ### Feature Engineering {#sec-FE}
 
@@ -219,7 +219,7 @@ naniar::miss_var_summary(lasso_dataset) %>%
 ```
 *Table 1: Missingness in the predictor set.*
 
-The missingness for the rest of the models was also resolved by imputing the variables with values from a K-Nearest Neighbors model. 
+The missingness for the rest of the models was also resolved by imputing the variables with values from a K-Nearest Neighbors model, selected for the balance of quick computational times and flexible non-linear methods based on its non-parametric underpinnings.
 
 Our model was based relationships between the Gayborhood index and all of the remaining predictors after LASSO selection. Additional feature engineering steps include the following:
 
@@ -232,7 +232,7 @@ Our model was based relationships between the Gayborhood index and all of the re
 Dummy encoding was ***NOT*** used for our random forest model. Tree-based models can decipher trends in categorical variables and in many cases are faster when dummy encoding is not used. 
 :::
 
-This feature engineering workflow was decided on after initial tinkering with the elastic net model as a base for understanding our data. In order to increase the amount of variation explained by this model, we included a version that included all pairwise interactions between the feature selected terms, and then proceeded to use partial least squares tuned to the outcome to reduce dimensionality. Number of components used in this model was tuned, yet it still performed worse than the base elastic net model, likely because the penalty term proxied for targeted dimensionality reduction.
+This feature engineering workflow was decided on after initial tinkering with the elastic net model as a base for understanding our data. In order to increase the amount of variation explained by this model, we included a version that included all pairwise interactions between the feature selected terms, and then proceeded to use partial least squares tuned to the outcome to reduce dimensionality. Number of components used in this model was tuned, yet it still performed worse than the base elastic net model, likely because the penalty term proxies for targeted dimensionality reduction.
 
 ### Data Splitting and Folding
 We split the data into training and testing sets with a proportion of *80% training and 20% testing*, stratified by the outcome variable with 4 bins. We chose this as it is the convention for datasets that are large enough that withholding data from the training set is not a concern. 
@@ -245,7 +245,7 @@ Our initial modeling process began with fitting our data to a variety of differe
 
 ### Initial Model Types {#sec-IM}
 
-The following model types were used for inital analysis:
+The following model types were used for initial analysis:
 
 - Penalized Elastic Net Regression
     - with and without [partial least squares](https://en.wikipedia.org/wiki/Partial_least_squares_regression)
@@ -272,7 +272,7 @@ The following model types were used for inital analysis:
 
 ### Model Results
 
-Based on resample cross validation, intial results showed that the cubist ensemble model performed the best, with a mean RMSE of .328. Elastic net regression (without PLS) and random forest were also in the top 3 models, all with RMSEs under .34. K-nearest neighbors and boosted trees performed almost as well, both under .35. There is then a significant gap to the worse models, those being elastic net with PLS, multivariate adapative regression splines, and neural networks with keras. This is summarized in table 2:
+Based on resample cross validation, initial results showed that the cubist ensemble model performed the best, with a mean RMSE of .328. Elastic net regression (without PLS) and random forest were also in the top 3 models, all with RMSEs under .34. K-nearest neighbors and boosted trees performed almost as well, both under .35. There is then a significant gap to the worse models, those being elastic net with PLS, multivariate adaptive regression splines, and neural networks with keras. This is summarized in table 2:
 
 ```{r}
 #| label: initial-comp-table
@@ -345,7 +345,6 @@ time_data %>%
 ```
 *Table 3: Initial model time results. Time per model accounts for number of hyperparameter combinations, number of folds, and number of repeats. Models were trained using 5-8 threads, except for keras models, which were trained in series.*
 
-
 Unsurprisingly, elastic net models fit the quickest to our data. It is important to note here that parallel processing was not possible for the neural network case, which partially explains their much higher values. Here, it is also important to note that cubist ensemble regression, which had the lowest RMSE, did take longer than most of our other models. It is still within a reasonable range for this set, but in similar studies elastic net could be a more computationally efficient choice.
 
 ### Ensemble Model {#sec-ENS}
@@ -393,7 +392,7 @@ tribble(
   ) %>% 
   gtExtras::gt_theme_538()
 ```
-*Table 4: Weights applied to individual models in the 5 type input stack. Model types in the inital 3 input stack are highlighted in green.*
+*Table 4: Weights applied to individual models in the 5 type input stack. Model types in the initial 3 input stack are highlighted in green.*
 
 Our 3 model types from the first ensemble are the top 4 contributors, and comprise 76% of this second ensemble.
 
@@ -401,7 +400,7 @@ Additionally the 3 input model was seen to have a lower RMSE at the chosen numbe
 
 ## Final Results {#sec-FINAL}
 
-Fitting our final ensemble model to the testing data and undoing the yeo-johnson transform, we find the root mean squared error of predictions was ***3.30***, and the concordance correlation coefficient was ***0.714***. This is thus a valuable model for predicting queer acceptance in areas based on the way life is organized in those locations. Interestingly, this RMSE is *higher* than two of the ensemble members (both cubist ensemble models) individually, as shown in Table 5:
+Fitting our final ensemble model to the testing data and undoing the Yeo-Johnson transform, we find the root mean squared error of predictions was ***3.30***, and the concordance correlation coefficient was ***0.714***. In other words, the average miss of the model was 3.30%, which is a welcome sight as our index is scored out of 100 percentage points. This is thus a valuable model for predicting queer acceptance in areas based on the way life is organized in those locations. Interestingly, this RMSE is *higher* than two of the ensemble members (both cubist ensemble models) individually when fit to the testing data, most likely due to issues with overfitting, as shown in Table 5:
 
 ```{r}
 #| label: ensemble-results
@@ -426,12 +425,12 @@ rmse_by_member %>%
 ```
 *Table 5: Ensemble results by member. Ensemble refers to the entire ensemble performance.*
 
-In order to ensure that this discrepancy between our expected lowest RMSE (our ensemble) and our actual lowest RMSE (a cubist constituent) really exists, we fit a cubist ensemble model with the *best performing hyperparamters on our resamples*. This yields an RMSE of **3.32**, which is higher than our ensemble model. Thus, we conclude that the two specific cubist models that performed better than our ensemble happened to be better at prediction in our testing data, and we choose *not* to further use these models outside of the ensemble in order to avoid overfitting to our testing data. 
+In order to ensure that this discrepancy between our expected lowest RMSE (our ensemble) and our actual lowest RMSE (a cubist constituent) really exists, we fit a cubist ensemble model with the *best performing hyperparameters on our resamples*. This yields an RMSE of **3.32**, which is higher than our ensemble model. Thus, we conclude that the two specific cubist models that performed better than our ensemble happened to be better at prediction in our testing data, and we choose *not* to further use these models outside of the ensemble in order to avoid overfitting to our testing data. 
 
 To further analyze our results, we plot predicted vs true values of our index, as well as fitted vs residual values:
 
 ```{r}
-#| label: assesment-via-ggplot
+#| label: assessment-via-ggplot
 
 p1 <- ensemble_preds %>%
   ggplot(aes(x = predictions, y = residuals)) +
@@ -457,7 +456,7 @@ p1 + p2 + plot_annotation(title = "Assessment of Final Model")
 ```
 *Figure 5: Assessment of fit of final ensemble model. Model aptly captures variance in outcome variable, especially for lower values.*
 
-These two plots highlight the general success of our model-- predictions correlate with actual values, and there is no clear trend in residuals that our model fails to capture. That said, it is important to note that this model did a much better job of fitting to lower Gayborhood index values, which were more plentiful in both the training and testing data. 
+These two plots highlight the general success of our model-- predictions correlate with actual values and are relatively faithful to the 45 degree line, and there is no clear trend in residuals that our model fails to capture. That said, it is important to note that this model did a much better job of fitting to lower Gayborhood index values, which were more plentiful in both the training and testing data. 
 
 ### Conclusions
 
@@ -465,6 +464,10 @@ For this reason, we conclude that our model is a ***valuable tool for predicting
 
 ### Future Directions
 
-- Future studies resembling this one could explore more feature engineering steps-- our conclusions are generally based on the simple feature engineering that we landed on as a valuable and computationally efficient way to capture variance with our models, but it is possible that other methods could also aid in this process.
+- Future studies resembling this one could explore more feature engineering steps-- our conclusions are generally based on the simple feature engineering that we landed on as a valuable and computationally efficient way to capture variance with our models, but it is possible that other methods could also aid in this process. For example, further extraction of data features through natural splines, b-splines, convex splines, and monotone splines with varying degrees of freedom could prove useful in prediction. Oftentimes, the data is nonlinear, so implementing these steps may improve model performance at the risk of overfitting.
+
+- Other potential studies may look into other models not included within the `tidymodels` framework. For example, boosted trees are gaining traction as methods to improve model performance and decrease computational times continue to be developed. For example, using `catboost` (gradient boosting) or `LightGBM` may be useful as currently, `XGBoost` is the main method of implementing a boosted tree. Other methods like automatic feature selection through `featuretools` could also be worth testing to see if further improvements can be made to increase predictive power of models and data.
 
 - Additionally, in similar studies we would be interested in determining if decreasing the ensemble model input to 2 members would help, before fitting to our testing data. This insight comes after fitting to test data, where we notice that our two random forest contributors had much higher RMSE values than the other candidate models. However, we avoid performing this ensemble reduction on our data, since we do not want knowledge of the test data to bias our model building.
+
+- Besides feature engineering and modeling steps, we also acknowledge our data sources are imperfect and most likely do not capture the entire story here. Even though our project is not inferential in nature, we are still worried about factors including measurement error of some qualitative variables and omitted variable bias. These concerns may be remedied with additional background research and literature review into current methodologies surrounding the study of Gayborhoods.
