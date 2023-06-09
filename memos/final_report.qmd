@@ -56,7 +56,7 @@ Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipe
 
 ### Outcome Variable
 
-In order to rank Gayborhood status, we are using a published dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1] that was analyzed to display distribution of queer communities in Jan Diehm's 2018 article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). Specifically, the metrics in this dataset are combined to form a Gayborhood index, which we will use as the supervising variable for our machine learning project. This index is a holistic assessment of queerness, derived primarily from the following measures:
+In order to rank Gayborhood status, we are using a published dataset [from data world](https://data.world/the-pudding/gayborhoods)[^1] that was analyzed to display distribution of queer communities in Jan Diehm's 2018 article [*Men are from Chelsea, Women are from Park Slope*](https://pudding.cool/2018/06/gayborhoods/). Specifically, the metrics in this dataset are combined to form a Gayborhood index, which we will be using a modified version of as the supervising variable for our machine learning project. This index is a holistic assessment of queerness, derived primarily from the following measures:
 
 [^1]: Jan Diehm. (2018). *Gayborhoods* [Data set]. *The Pudding*, data.world. https://data.world/the-pudding/gayborhoods. Accessed 10 April 2023.
 
@@ -65,7 +65,7 @@ In order to rank Gayborhood status, we are using a published dataset [from data 
 - Number of Gay Bars
 - Whether or not a pride parade routes through the region
 
-In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. In the Exploratory Data Analysis section, we will discuss measures to transform the outcome variable into a more favorable distribution.
+In this case, we will be training a regression model to predict Gayborhood index. The initial variable exists on a 0 to 100 scale with a mean of 2.39, median of 1.27, and a max of 67.1. In @sec-EDA, we will discuss our measures to reprocess the outcome variable.
 
 ## Data collection
 
@@ -105,7 +105,7 @@ One main concern with our data is the ratio of observations to predictors, since
 
 Because census predictors were numerous, any variables with greater than 10% missing were removed. The missingness in these variables are assumed to be randomly missing since they were collected and reported in the US Census ACS survey.
 
-## Exploratory Data Analysis
+## Exploratory Data Analysis {#sec-EDA}
 
 ### Outcome Variable Transformation
 
@@ -180,7 +180,7 @@ A lasso model was fit to the training set to further narrow down the list of pre
 In addition to the issue of having many possible predictors variables, there are varying degrees of missingness across the predictors. Many of the variables with larger degrees of missingness were removed in the process of lasso selection, and the remaining variables had low missingness (under 2%). The remaining missing values are summarized in the table below, with higher missingness listed first.
 
 ```{r}
-# label: missingness
+#| label: missingness
 naniar::miss_var_summary(lasso_dataset) %>% 
   DT::datatable()
 ```
