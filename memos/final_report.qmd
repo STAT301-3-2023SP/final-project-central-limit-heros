@@ -54,7 +54,13 @@ load("results/predictions/metrics_by_member.rda")
 
 ## Introduction
 
-Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipedia.org/wiki/Gay_village), have been urban areas in which LGBTQ+ people have found community and built culture worldwide. However, these geographic areas serve as much more than the sexuality of their constituents, and have been cited as yielding robust creative economies, as well as a welcoming environment for those of many identities. Knowing this, the identity of a certain locale as a Gayborhood becomes a crucial sociological metric, with neighborhoods with a more prevalent queer identity driving social liberalism in the face of prejudice. Our analysis thus focuses on building a **location-based regression model** that uses a variety of parameters including housing, land use, and non-queer demographic data **to predict Gayborhood degree**, and, in so doing, determine whether an area is suitable for queer folks with the goal of advancing understanding of liberal areas.
+### Project Motivation
+
+Neighborhoods with a high queer population, or [*Gayborhoods*](https://en.wikipedia.org/wiki/Gay_village), have been urban areas in which LGBTQ+ people have found community and built culture worldwide. These geographic areas serve as much more than the sexuality of their constituents, and have been cited as yielding robust creative economies, as well as a welcoming environment for those of many identities. However, because queer identities are not directly measured by the Census and can often be hidden by a variety of discriminatory values, mapping Gayborhood status can be difficult[^8]. Knowing this, the identity of a certain locale as a Gayborhood becomes a crucial sociological metric, with neighborhoods with a more prevalent queer identity driving social liberalism in the face of prejudice. Our analysis thus builds upon previous methods for classifying gayborhood status, first introduced by Castells and Murphy in 1982[^7], with the creation of a **location-based regression model** that uses a variety of parameters including housing, land use, and non-queer demographic data **to predict Gayborhood degree**. In so doing, we will be able to determine whether an area is suitable for queer folks with the goal of advancing understanding of liberal areas and their interaction with daily life.
+
+[^8]: Ghaziani, A. (2014). APPENDIX: WHAT ARE GAYBORHOODS? HOW DO WE STUDY THEM? In There Goes the Gayborhood? (pp. 271–286). Princeton University Press. http://www.jstor.org/stable/j.ctt6wq0cv.13
+
+[^7]: Castells, M., & Murphy, K. (1982). Cultural identity and urban structure: the spatial organization of San Francisco’s gay community. Urban policy under capitalism, 20, 237-259.
 
 ### Workflow Overview
 
