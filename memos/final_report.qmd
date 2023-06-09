@@ -209,7 +209,7 @@ A LASSO model was fit to the training set to further narrow down the list of pre
 
 ### Feature Engineering {#sec-FE}
 
-In addition to the issue of having many possible predictor variables, there are varying degrees of missingness across the predictors. Many of the variables with larger degrees of missingness were removed in the process of lasso selection, and the remaining variables had low missingness (under 2%). The remaining missing values are summarized in the table below, with higher missingness listed first.
+In addition to the issue of having many possible predictor variables, there are varying degrees of missingness across the predictors. Many of the variables with larger degrees of missingness were removed in the process of LASSO selection, and the remaining variables had low missingness (under 2%). The remaining missing values are summarized in the table below, with higher missingness listed first.
 
 ```{r}
 #| label: missingness
@@ -221,9 +221,9 @@ naniar::miss_var_summary(lasso_dataset) %>%
 
 The missingness for the rest of the models was also resolved by imputing the variables with values from a K-Nearest Neighbors model. 
 
-Our model was based relationships between the Gayborhood index and all of the remaining predictors after lasso selection. Additional feature engineering steps include the following:
+Our model was based relationships between the Gayborhood index and all of the remaining predictors after LASSO selection. Additional feature engineering steps include the following:
 
-- removal of all near zero variance predictors (though this is ideally redundant after lasso selection)
+- removal of all near zero variance predictors (though this is ideally redundant after LASSO selection)
 - updating the role of the ID column to ensure it is not used as a predictor, 
 - dummy encoding categorical predictors, 
 - normalization of all predictors (centered and scaled to unit variance)
@@ -401,7 +401,7 @@ Additionally the 3 input model was seen to have a lower RMSE at the chosen numbe
 
 ## Final Results {#sec-FINAL}
 
-Fitting our final ensemble model to the testing data and undoing the yeo-johnson transform, we find the root mean squared error of predictions was ***3.30***, and the concordance correlation coefficient was ***0.714***. This thus a valuable model for predicting queer acceptance in areas based on the way life is organized in those locations. Interestingly, this RMSE is *higher* than two of the ensemble members (both cubist ensemble models) individually, as shown in Table 5:
+Fitting our final ensemble model to the testing data and undoing the yeo-johnson transform, we find the root mean squared error of predictions was ***3.30***, and the concordance correlation coefficient was ***0.714***. This is thus a valuable model for predicting queer acceptance in areas based on the way life is organized in those locations. Interestingly, this RMSE is *higher* than two of the ensemble members (both cubist ensemble models) individually, as shown in Table 5:
 
 ```{r}
 #| label: ensemble-results
@@ -426,7 +426,7 @@ rmse_by_member %>%
 ```
 *Table 5: Ensemble results by member. Ensemble refers to the entire ensemble performance.*
 
-In order to ensure that this discrepancy between our expected lowest RMSE (our ensemble) and our actual lowest RMSE (a cubist constituent), we fit a cubist ensemble model with the *best performing hyperparamters on our resamples*. This yields an RMSE of **3.32**, which is higher than our ensemble model. Thus, we conclude that the two specific cubist models that performed better than our ensemble happened to be better at prediction in our testing data, and we choose *not* to further use these models outside of the ensemble in order to avoid overfitting to our testing data. 
+In order to ensure that this discrepancy between our expected lowest RMSE (our ensemble) and our actual lowest RMSE (a cubist constituent) really exists, we fit a cubist ensemble model with the *best performing hyperparamters on our resamples*. This yields an RMSE of **3.32**, which is higher than our ensemble model. Thus, we conclude that the two specific cubist models that performed better than our ensemble happened to be better at prediction in our testing data, and we choose *not* to further use these models outside of the ensemble in order to avoid overfitting to our testing data. 
 
 To further analyze our results, we plot predicted vs true values of our index, as well as fitted vs residual values:
 
