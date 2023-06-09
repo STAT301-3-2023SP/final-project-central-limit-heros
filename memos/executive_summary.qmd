@@ -5,8 +5,8 @@ author: "Vlad Nevirkovets, Sean Pascoe, Dylan Yan"
 date: today
 format: 
   html:
+    theme: custom.scss
     embed-resources: true
-    toc: true
     link-external-newwindow: true
     df-print: paged
     footnotes-hover: true
@@ -32,6 +32,8 @@ load("results/predictions/metrics_by_member.rda")
 load("results/predictions/ensemble_preds.rda")
 ```
 
+::: {.column-page-inset}
+## Overview 
 
 ::: {.callout-tip icon="false"}
 ## Github Repo Link
@@ -39,18 +41,24 @@ load("results/predictions/ensemble_preds.rda")
 <https://github.com/STAT301-3-2023SP/final-project-central-limit-heros>
 :::
 
-Nieghborhoods with a high queer population, which are centers of queer culture, are known as Gayborhoods. Knowing whether an area is suitable for queer people is an important sociological metric. We built a location-based regression model to predict the degree to which a neighborhood is a Gayborhood based on non-queer demographic data.
+***Gayborhoods***, or neighborhoods with a high queer population, are hubs of sociocultural development that form important facets of urban life, but have historically alluded accurate classification due to the difficulty to obtain queer metrics. To solve this issue, we used readily available data pertaining to daily life in an area to build a  regression model to predict the degree of LGBTQ+ representation within a neighborhood, adapting a holistic outcome metric from [Jan Diehm](https://data.world/the-pudding/gayborhoods).
 
-Our outcome variable is an index (the "Gayborhood index") from a dataset published on [data world](https://data.world/the-pudding/gayborhoods). This index is a holistic assessment of a neighborhood's queerness, based on a number of factors such as number of same sex households, number of gay bars, and pride parade routes. This index is assigned by zip code. Our predictors were taken from datasets on [housing characteristics](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04.), [demographic information](https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05.) not related to sexuality, and [transport to work](https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802.) from the US census, as well as a dataset on the amount of [park space](https://doi.org/10.3886/E119803V1.) per zip code.
 
-The initial phase of the modeling process consisted of exploring the data, joining and cleaning it. Due to strong skew, we transformed the outcome variable using the Yeo-Johnson transformation. We then ran a lasso model with a penalty of .01 to select the most relevant predictor variables, resulting in about 100 predictors used out of a total of over 550. We tuned and fitted a penalized elastic net regression model (with and without partial least squares), random forest, boosted tree, k-nearest neighbors, neural networks, multivariate adaptive regression splines, and cubist ensemble regression. The feature engineering consisted of imputation of missing values using KNN, removal of near zero variance predictors, dummy encoding categorical predictors (except for random forest), and normalization of all predictors. 
 
-Our data was split into 80/20 training/testing sets, and we used 5-fold cross validation with 3 repeats when tuning and our models. Using RMSE as a metric, we found cubist ensemble regression, elastic net regression, and random forest to be the three best performing models. As our final step, we joined the three best performing models into an ensemble. 
+## Quotidian Metrics Reliably Predict Gayborhood Index 
 
-::: {.grid}
+Our predictors were taken from the US Census and Open ICPSR, and use ZCTA as a key to gauge the following:
 
-::: {.g-col-4}
+- [housing characteristics](https://data.census.gov/table?q=rent&g=010XX00US$8600000&tid=ACSDP5Y2021.DP04.)
+- [demographic information](https://data.census.gov/table?g=010XX00US$8600000&tid=ACSDP5Y2015.DP05.) 
+- [transport to work](https://data.census.gov/table?q=commuting&g=010XX00US$8600000&tid=ACSST5Y2021.S0802.)
+- [park space](https://doi.org/10.3886/E119803V1.)
+
+Due to strong right skew, we transformed the outcome variable using the Yeo-Johnson transformation. We then ran a LASSO model with a penalty of .01 to select the most relevant predictor variables, resulting in an 80% reduction in predictors. We tuned and fitted a penalized elastic net regression model (with and without partial least squares), random forest, boosted tree, k-nearest neighbors, neural networks, multivariate adaptive regression splines, and cubist ensemble regression. Feature engineering consisted of imputation of missing values using KNN, removal of near zero variance predictors, dummy encoding categorical predictors (except for random forest), and normalization of all predictors. With a test set ***RMSE of 3.3*** on a variable with a 100 point scale, our ensemble model succeeds at predicting LGBTQ+ sociocultural status of American neighborhoods.
+
 ```{r}
+#| label: rmse-by-member
+#| panel: sidebar
 rmse_by_member %>% 
   mutate(rmse = round(rmse, digits = 3)) %>% 
   arrange(rmse) %>% 
@@ -64,20 +72,35 @@ rmse_by_member %>%
   gtExtras::gt_theme_538() %>% 
   gtExtras::gt_highlight_rows(
     rows = 3,
-    fill = "lightgrey",
+    fill = "rosybrown1",
     bold_target_only = TRUE,
     target_col = model_name
     ) %>% 
   tab_options(table.font.size = 12)
 ```
 
+
+## Ensemble Modeling Predicts LGBTQ+ Deficient Areas
+
+:::: {.columns}
+
+::: {.column width="50%"}
+Using RMSE as a metric, we found cubist ensemble regression, elastic net regression, and random forest to be the three best performing models. As our final step, we joined the three best performing models into an ensemble. This ensemble proves effective at predicting gayborhood index, especially at lower values, where predictions are closer to the (more prevalent) observations. The ability of our models to predict variance in gayborhood index is also resolved in our ***concordance correlation coefficient of 0.714***
+
 :::
 
-::: {.g-col-8}
+::: {.column width="10%"}
+<!-- empty column to create gap -->
+:::
+
+::: {.column width="40%"}
+
 ```{r}
+#| label: preds-v-true
+#| panel: fill
 ensemble_preds %>%
   ggplot(aes(x = true_gayborhood_index, y = predictions)) +
-  geom_abline(slope = 1, color = "red", linetype = "dashed") +
+  geom_abline(slope = 1, color = "rosybrown1", linetype = "dashed") +
   geom_point(alpha = 0.3) +
   coord_obs_pred() +
   theme_minimal() +
@@ -88,6 +111,12 @@ ensemble_preds %>%
 
 :::
 
+::::
+
+
 :::
 
-Conclusion to be added.
+
+
+
+
